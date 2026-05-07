@@ -1,0 +1,27 @@
+# Proje Konfigürasyon Dosyası
+# Hard-coded değer kullanımını önlemek için tüm parametreler buradan okunacaktır.
+
+data:
+  skab_path: "data"
+  batadal_path: "data/BATADAL/BATADAL_dataset04.csv"
+  random_seeds: [42, 123, 2026, 7, 999]
+
+automata_params:
+  # Sabit parametreler (Karşılaştırma için)
+  window_size_fixed: 4
+  alphabet_size_fixed: 3
+  
+  # Parametre varyasyonları
+  window_sizes: [3, 4, 5, 6]
+  alphabet_sizes: [3, 4, 5, 6]
+
+deep_learning_params:
+  models_to_run: ["LSTM", "1D-CNN"]
+  epochs: 50
+  batch_size: 32
+  early_stopping_patience: 5
+
+experiment_scenarios:
+  run_original: true
+  run_noisy: true
+  run_unseen: true

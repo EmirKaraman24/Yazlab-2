@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Data and Models
+data/
+*.h5
+*.hdf5
+*.keras
+*.pt
+*.pth
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+
+# Logs and outputs
+logs/
+results/
+*.log
