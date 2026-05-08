@@ -38,5 +38,6 @@ def load_skab_data(config):
 
 if __name__ == "__main__":
     config = load_config()
+    
     skab_df = load_skab_data(config)
     print(f"SKAB verileri birleştirildi. Toplam boyut: {skab_df.shape}")
