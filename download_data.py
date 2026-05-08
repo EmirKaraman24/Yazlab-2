@@ -37,17 +37,18 @@ def setup_data():
             shutil.move(src, dest)
             print(f"Moved {folder} to {DATA_DIR}/{folder}")
 
-    # 2. Download BATADAL (Training Dataset 2)
+    # 2. Download BATADAL Training Dataset 2 (resmi kaynak: batadal.net)
+    # Training Dataset 2: ~6 aylık, kısmen etiketli saldırı verisi içerir.
     batadal_dir = os.path.join(DATA_DIR, "BATADAL")
     if not os.path.exists(batadal_dir):
         os.makedirs(batadal_dir)
-    
-    batadal_url = "https://raw.githubusercontent.com/sateesh-kumar-b/BATADAL/master/BATADAL_dataset04.csv"
+
+    batadal_url = "https://batadal.net/data/BATADAL_dataset04.csv"
     batadal_csv = os.path.join(batadal_dir, "BATADAL_dataset04.csv")
     if not os.path.exists(batadal_csv):
         download_file(batadal_url, batadal_csv)
     else:
-        print("BATADAL already exists.")
+        print("BATADAL Training Dataset 2 zaten mevcut, indirme atlandı.")
 
 if __name__ == "__main__":
     setup_data()
