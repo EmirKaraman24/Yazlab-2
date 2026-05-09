@@ -28,7 +28,7 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (EMIR) SKAB verilerini concat ile birleştiren ve source_file, source_group sütunlarını ekleyen kod yazıldı.
 - `[x]` (ARKADAS) BATADAL Training Dataset 2'yi indiren ve yükleyen script yazıldı.
 - `[x]` (EMIR) Veri yükleme fonksiyonlarına test (loglama) eklendi.
-- `[ ]` (ARKADAS) Veri setlerinin ilk analizlerini (shape, missing values) basan bir keşif kodu yazıldı.
+- `[x]` (ARKADAS) Veri setlerinin ilk analizlerini (shape, missing values) basan bir keşif kodu yazıldı.
 
 ## Aşama 2: Veri Ön İşleme (Commit 9 - 18)
 - `[ ]` (EMIR) SKAB verisini `source_file` kullanarak GroupKFold'a göre bölen fonksiyon eklendi.
