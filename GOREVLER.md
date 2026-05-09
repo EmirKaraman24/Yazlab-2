@@ -27,7 +27,7 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (ARKADAS) SKAB veri setini indiren ve otomatik `valve1`, `valve2` klasörlerini okuyan script yazıldı.
 - `[x]` (EMIR) SKAB verilerini concat ile birleştiren ve source_file, source_group sütunlarını ekleyen kod yazıldı.
 - `[x]` (ARKADAS) BATADAL Training Dataset 2'yi indiren ve yükleyen script yazıldı.
-- `[ ]` (EMIR) Veri yükleme fonksiyonlarına test (loglama) eklendi.
+- `[x]` (EMIR) Veri yükleme fonksiyonlarına test (loglama) eklendi.
 - `[ ]` (ARKADAS) Veri setlerinin ilk analizlerini (shape, missing values) basan bir keşif kodu yazıldı.
 
 ## Aşama 2: Veri Ön İşleme (Commit 9 - 18)
