@@ -31,7 +31,7 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (ARKADAS) Veri setlerinin ilk analizlerini (shape, missing values) basan bir keşif kodu yazıldı.
 
 ## Aşama 2: Veri Ön İşleme (Commit 9 - 18)
-- `[ ]` (EMIR) SKAB verisini `source_file` kullanarak GroupKFold'a göre bölen fonksiyon eklendi.
+- `[x]` (EMIR) SKAB verisini `source_file` kullanarak GroupKFold'a göre bölen fonksiyon eklendi.
 - `[ ]` (ARKADAS) BATADAL verisini zaman sırasına göre %60-%20-%20 oranında bölen fonksiyon eklendi.
 - `[ ]` (EMIR) Train verisi üzerinden scaler fit eden ve tüm setlere uygulayan normalizasyon modülü eklendi.
 - `[ ]` (ARKADAS) Train verisi üzerinden PCA (1 bileşen) uygulayan modül eklendi.

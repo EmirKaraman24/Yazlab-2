@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import yaml
 import logging
+from sklearn.model_selection import GroupKFold
 
 # Commit 7: Loglama (test) mekanizması eklendi
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -95,6 +96,66 @@ def load_batadal_data(config):
     except Exception as e:
         logging.error(f"BATADAL verisi okunurken hata oluştu: {e}")
         return pd.DataFrame()
+
+
+def split_skab_group_kfold(df, config):
+    """
+    SKAB verisini `source_file` sütununu grup anahtarı olarak kullanarak
+    GroupKFold ile fold'lara böler.
+
+    Aynı dosyadan gelen satırlar her zaman aynı fold'da yer alır; bu sayede
+    veri sızıntısı (data leakage) önlenir.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        `load_skab_data` tarafından döndürülen, `source_file` sütununu içeren
+        birleşik SKAB DataFrame'i.
+    config : dict
+        `load_config` tarafından yüklenen yapılandırma sözlüğü.
+        ``config['preprocessing']['n_splits']`` değeri fold sayısını belirler.
+
+    Returns
+    -------
+    list of dict
+        Her eleman bir fold'u temsil eden ve şu anahtarları içeren sözlükler:
+        - ``'fold'`` (int): Fold numarası (1'den başlar).
+        - ``'train'`` (pd.DataFrame): Eğitim bölümü.
+        - ``'test'``  (pd.DataFrame): Test bölümü.
+
+    Raises
+    ------
+    ValueError
+        `df` boş ise veya `source_file` sütunu eksikse.
+    """
+    if df.empty:
+        raise ValueError("Boş DataFrame GroupKFold ile bölünemez.")
+    if 'source_file' not in df.columns:
+        raise ValueError("DataFrame'de 'source_file' sütunu bulunamadı.")
+
+    n_splits = config.get('preprocessing', {}).get('n_splits', 5)
+    logging.info(
+        f"SKAB verisi GroupKFold ile bölünüyor. "
+        f"n_splits={n_splits}, toplam satır={len(df)}, "
+        f"benzersiz dosya sayısı={df['source_file'].nunique()}"
+    )
+
+    groups = df['source_file']
+    gkf = GroupKFold(n_splits=n_splits)
+    folds = []
+
+    for fold_idx, (train_idx, test_idx) in enumerate(gkf.split(df, groups=groups), start=1):
+        train_df = df.iloc[train_idx]
+        test_df  = df.iloc[test_idx]
+        folds.append({'fold': fold_idx, 'train': train_df, 'test': test_df})
+        logging.info(
+            f"  Fold {fold_idx}: train={len(train_df)} satır "
+            f"({train_df['source_file'].nunique()} dosya), "
+            f"test={len(test_df)} satır "
+            f"({test_df['source_file'].nunique()} dosya)"
+        )
+
+    return folds
 
 
 if __name__ == "__main__":
