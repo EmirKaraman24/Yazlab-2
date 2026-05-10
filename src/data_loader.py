@@ -158,6 +158,61 @@ def split_skab_group_kfold(df, config):
     return folds
 
 
+def split_batadal_chronological(df, config):
+    """
+    BATADAL verisini zaman sırasına göre %60 train, %20 validation, %20 test
+    olarak böler. Shuffle yapılmaz; veri sızıntısı önlenir.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        `load_batadal_data` tarafından döndürülen, zaman indeksli BATADAL verisi.
+    config : dict
+        `load_config` tarafından yüklenen yapılandırma sözlüğü.
+        ``config['preprocessing']['batadal_split_ratios']`` değeri oranları belirler.
+        Varsayılan: [0.6, 0.2, 0.2]
+
+    Returns
+    -------
+    dict
+        Şu anahtarları içeren sözlük:
+        - ``'train'`` (pd.DataFrame): İlk %60.
+        - ``'val'``   (pd.DataFrame): Sonraki %20.
+        - ``'test'``  (pd.DataFrame): Son %20.
+
+    Raises
+    ------
+    ValueError
+        `df` boş ise veya oranların toplamı 1.0'ı aşıyorsa.
+    """
+    if df.empty:
+        raise ValueError("Boş DataFrame bölünemez.")
+
+    ratios = (
+        config.get('preprocessing', {})
+              .get('batadal_split_ratios', [0.6, 0.2, 0.2])
+    )
+    if abs(sum(ratios) - 1.0) > 1e-6:
+        raise ValueError(f"Oranların toplamı 1.0 olmalıdır; mevcut: {sum(ratios)}")
+
+    n = len(df)
+    train_end = int(n * ratios[0])
+    val_end   = train_end + int(n * ratios[1])
+
+    train_df = df.iloc[:train_end]
+    val_df   = df.iloc[train_end:val_end]
+    test_df  = df.iloc[val_end:]
+
+    logging.info(
+        f"BATADAL kronolojik bölme: toplam={n} satır, "
+        f"train={len(train_df)} (%{ratios[0]*100:.0f}), "
+        f"val={len(val_df)} (%{ratios[1]*100:.0f}), "
+        f"test={len(test_df)} (%{ratios[2]*100:.0f})"
+    )
+
+    return {'train': train_df, 'val': val_df, 'test': test_df}
+
+
 if __name__ == "__main__":
     logging.info("Veri yükleme testleri başlatılıyor...")
     try:

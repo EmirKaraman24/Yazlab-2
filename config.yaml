@@ -7,7 +7,8 @@ data:
   random_seeds: [42, 123, 2026, 7, 999]
 
 preprocessing:
-  n_splits: 5          # GroupKFold fold sayısı (SKAB source_file bazında)
+  n_splits: 5                          # GroupKFold fold sayısı (SKAB source_file bazında)
+  batadal_split_ratios: [0.60, 0.20, 0.20]  # Kronolojik bölme: train / val / test
 
 automata_params:
   # Sabit parametreler (Karşılaştırma için)
