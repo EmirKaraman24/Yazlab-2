@@ -9,6 +9,7 @@ data:
 preprocessing:
   n_splits: 5                          # GroupKFold fold sayısı (SKAB source_file bazında)
   batadal_split_ratios: [0.60, 0.20, 0.20]  # Kronolojik bölme: train / val / test
+  pca_n_components: 1                  # Otomata girdisi için PCA bileşen sayısı (PC1)
 
 automata_params:
   # Sabit parametreler (Karşılaştırma için)
