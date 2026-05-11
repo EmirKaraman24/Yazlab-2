@@ -32,8 +32,8 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 
 ## Aşama 2: Veri Ön İşleme (Commit 9 - 18)
 - `[x]` (EMIR) SKAB verisini `source_file` kullanarak GroupKFold'a göre bölen fonksiyon eklendi.
-- `[ ]` (ARKADAS) BATADAL verisini zaman sırasına göre %60-%20-%20 oranında bölen fonksiyon eklendi.
-- `[ ]` (EMIR) Train verisi üzerinden scaler fit eden ve tüm setlere uygulayan normalizasyon modülü eklendi.
+- `[x]` (ARKADAS) BATADAL verisini zaman sırasına göre %60-%20-%20 oranında bölen fonksiyon eklendi.
+- `[x]` (EMIR) Train verisi üzerinden scaler fit eden ve tüm setlere uygulayan normalizasyon modülü eklendi.
 - `[ ]` (ARKADAS) Train verisi üzerinden PCA (1 bileşen) uygulayan modül eklendi.
 - `[ ]` (EMIR) Veri sızıntısını engelleyecek şekilde preprocess adımlarını bağlayan pipeline oluşturuldu.
 - `[ ]` (ARKADAS) Pipeline için birim testi yazıldı (test veri setine fit edilmediğinden emin olundu).
