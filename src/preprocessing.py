@@ -218,3 +218,56 @@ def _pca_sonuclarini_birlestir(
     bileşen_df = pd.DataFrame(pca_degerleri, columns=bileşen_isimleri, index=kaynak_df.index)
     metaveri_df = kaynak_df.drop(columns=orijinal_sutunlar)
     return pd.concat([metaveri_df, bileşen_df], axis=1)
+
+
+def preprocess_pipeline(train_df, val_df=None, test_df=None, config=None, feature_cols=None):
+    """
+    Veri sızıntısını (data leakage) engelleyecek şekilde preprocess adımlarını
+    (Normalizasyon ve PCA) ardışık olarak bağlayan pipeline.
+
+    Kural gereği: Tüm normalizasyon ve boyut indirgeme (PCA) işlemleri
+    SADECE eğitim (train) verisine fit edilir. Validasyon ve test setlerine
+    sadece transform uygulanır.
+
+    Parameters
+    ----------
+    train_df : pd.DataFrame
+        Eğitim seti.
+    val_df : pd.DataFrame, optional
+        Validasyon seti.
+    test_df : pd.DataFrame, optional
+        Test seti.
+    config : dict
+        config.yaml içeriği. PCA bileşen sayısı buradan okunur.
+    feature_cols : list of str, optional
+        İşlem görecek özellik (feature) sütunlarının listesi. Etiket (label)
+        ve metaveri sütunları bu listede olmamalıdır.
+
+    Returns
+    -------
+    tuple
+        (final_train, final_val, final_test, scaler, pca)
+        Eğer val_df/test_df None ise dönüşte de None döner.
+    """
+    if config is None:
+        raise ValueError("config parametresi pipeline için zorunludur.")
+
+    pca_n = config.get('preprocessing', {}).get('pca_n_components', 1)
+
+    logging.info("Preprocess pipeline başlatılıyor: 1. Normalizasyon, 2. PCA")
+
+    # 1. Normalizasyon
+    scaled_train, scaled_val, scaled_test, scaler = normalize_data(
+        train_df, val_df, test_df, cols_to_scale=feature_cols
+    )
+
+    # 2. PCA
+    final_train, final_val, final_test, pca = apply_pca(
+        scaled_train, scaled_val, scaled_test,
+        cols_to_reduce=feature_cols,
+        n_components=pca_n
+    )
+
+    logging.info("Preprocess pipeline başarıyla tamamlandı.")
+
+    return final_train, final_val, final_test, scaler, pca
