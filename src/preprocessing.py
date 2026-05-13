@@ -4,6 +4,7 @@ Veri setlerinin ön işleme (preprocessing) adımlarını barındıran modül.
 eğitim verisine fit edilir; validasyon ve test setlerine sadece transform uygulanır.
 """
 
+import os
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
@@ -271,3 +272,38 @@ def preprocess_pipeline(train_df, val_df=None, test_df=None, config=None, featur
     logging.info("Preprocess pipeline başarıyla tamamlandı.")
 
     return final_train, final_val, final_test, scaler, pca
+
+
+def save_processed_datasets(save_dir, train_df=None, val_df=None, test_df=None, prefix=""):
+    """
+    Ön işlenmiş (zaman bağımsız) veri setlerini belirtilen klasöre CSV olarak kaydeder.
+
+    Parameters
+    ----------
+    save_dir : str
+        Verilerin kaydedileceği ana klasör yolu (örn: 'data/processed')
+    train_df : pd.DataFrame, optional
+        Kaydedilecek eğitim verisi.
+    val_df : pd.DataFrame, optional
+        Kaydedilecek validasyon verisi.
+    test_df : pd.DataFrame, optional
+        Kaydedilecek test verisi.
+    prefix : str, optional
+        Dosya isimlerinin başına eklenecek ön ek (örn: 'skab_fold1_')
+    """
+    os.makedirs(save_dir, exist_ok=True)
+    
+    if train_df is not None and not train_df.empty:
+        train_path = os.path.join(save_dir, f"{prefix}train.csv")
+        train_df.to_csv(train_path, index=True)
+        logging.info(f"Eğitim verisi diske kaydedildi: {train_path}")
+        
+    if val_df is not None and not val_df.empty:
+        val_path = os.path.join(save_dir, f"{prefix}val.csv")
+        val_df.to_csv(val_path, index=True)
+        logging.info(f"Validasyon verisi diske kaydedildi: {val_path}")
+        
+    if test_df is not None and not test_df.empty:
+        test_path = os.path.join(save_dir, f"{prefix}test.csv")
+        test_df.to_csv(test_path, index=True)
+        logging.info(f"Test verisi diske kaydedildi: {test_path}")

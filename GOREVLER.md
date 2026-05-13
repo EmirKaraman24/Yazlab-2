@@ -37,7 +37,7 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (ARKADAS) Train verisi üzerinden PCA (1 bileşen) uygulayan modül eklendi.
 - `[x]` (EMIR) Veri sızıntısını engelleyecek şekilde preprocess adımlarını bağlayan pipeline oluşturuldu.
 - `[x]` (ARKADAS) Pipeline için birim testi yazıldı (test veri setine fit edilmediğinden emin olundu).
-- `[ ]` (EMIR) Zaman bağımsız veri setleri (X_train, y_train vs.) diske kaydedilme mantığı eklendi.
+- `[x]` (EMIR) Zaman bağımsız veri setleri (X_train, y_train vs.) diske kaydedilme mantığı eklendi.
 - `[ ]` (ARKADAS) Gürültülü veri senaryosu için Gaussian Noise ekleyen fonksiyon eklendi.
 - `[ ]` (EMIR) Sliding window işlemi ile verileri (window_size) pencerelerine bölen algoritma yazıldı.
 - `[ ]` (ARKADAS) Veri ön işleme tamamlandı, pipeline baştan sona entegre edildi.
