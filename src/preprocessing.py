@@ -307,3 +307,80 @@ def save_processed_datasets(save_dir, train_df=None, val_df=None, test_df=None, 
         test_path = os.path.join(save_dir, f"{prefix}test.csv")
         test_df.to_csv(test_path, index=True)
         logging.info(f"Test verisi diske kaydedildi: {test_path}")
+
+
+def add_gaussian_noise(df, noise_std, feature_cols=None, random_seed=None):
+    """
+    Belirtilen özellik sütunlarına sıfır ortalamalı Gaussian (Normal) gürültü ekler.
+
+    Gürültülü veri senaryolarında modelin sağlamlığını (robustness) test etmek için
+    kullanılır. Standart sapma (noise_std) değeri hard-coded olarak yazılmamalı;
+    ``config.yaml`` içindeki ``preprocessing.gaussian_noise_std`` anahtarından okunmalıdır.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Gürültü eklenecek kaynak veri çerçevesi. Orijinal veri değiştirilmez;
+        fonksiyon her zaman bir kopya (copy) üzerinde çalışır.
+    noise_std : float
+        Gaussian dağılımının standart sapması. Değer ``config.yaml`` üzerinden
+        okunarak bu parametreye geçirilmelidir.
+    feature_cols : list of str, optional
+        Gürültü eklenecek özellik (feature) sütunlarının listesi.
+        Belirtilmezse ``df`` içindeki tüm sayısal sütunlara uygulanır.
+        Etiket (label) ve metaveri sütunları bu listeye eklenmemelidir.
+    random_seed : int, optional
+        Tekrarlanabilirlik için NumPy rastgele sayı üretecine verilecek tohum değeri.
+        ``config.yaml`` içindeki ``data.random_seeds`` listesinden seçilmelidir.
+
+    Returns
+    -------
+    pd.DataFrame
+        Gürültü eklenmiş yeni bir DataFrame. Etiket ve metaveri sütunları
+        (``feature_cols`` dışında kalan tüm sütunlar) değiştirilmeden korunur.
+
+    Raises
+    ------
+    ValueError
+        ``df`` boş veya None ise ya da ``noise_std`` sıfır veya negatifse.
+
+    Examples
+    --------
+    >>> import yaml
+    >>> with open("config.yaml") as f:
+    ...     cfg = yaml.safe_load(f)
+    >>> std = cfg["preprocessing"]["gaussian_noise_std"]
+    >>> seed = cfg["data"]["random_seeds"][0]
+    >>> noisy_train = add_gaussian_noise(train_df, noise_std=std,
+    ...                                  feature_cols=feature_cols, random_seed=seed)
+    """
+    if df is None or df.empty:
+        raise ValueError("Gürültü eklenecek veri çerçevesi (df) boş veya None olamaz.")
+
+    if noise_std <= 0:
+        raise ValueError(
+            f"noise_std sıfırdan büyük bir değer olmalıdır, verilen: {noise_std}"
+        )
+
+    # Gürültü eklenecek sütunları belirle
+    if feature_cols is None:
+        feature_cols = df.select_dtypes(include=["number"]).columns.tolist()
+
+    if not feature_cols:
+        logging.warning("Gürültü eklenecek hiçbir sayısal sütun bulunamadı; veri değiştirilmeden döndürülüyor.")
+        return df.copy()
+
+    # Tekrarlanabilirlik için tohum (seed) ayarla
+    rng = np.random.default_rng(random_seed)
+
+    noisy_df = df.copy()
+    gurultu = rng.normal(loc=0.0, scale=noise_std, size=noisy_df[feature_cols].shape)
+    noisy_df[feature_cols] = noisy_df[feature_cols].values + gurultu
+
+    logging.info(
+        f"Gaussian gürültü eklendi. Standart sapma: {noise_std}, "
+        f"Etkilenen sütun sayısı: {len(feature_cols)}, "
+        f"Rastgele tohum: {random_seed}"
+    )
+
+    return noisy_df
