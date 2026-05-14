@@ -384,3 +384,74 @@ def add_gaussian_noise(df, noise_std, feature_cols=None, random_seed=None):
     )
 
     return noisy_df
+
+
+def create_sliding_windows(df, window_size, feature_cols=None, label_col=None):
+    """
+    Zaman serisi verisini kayan pencere (sliding window) yöntemiyle 3 boyutlu alt dizilere böler.
+    
+    Özellikle LSTM, 1D-CNN ve Otomata tabanlı modeller için verinin (örnek_sayısı, zaman_adımı, özellik_sayısı)
+    formatına dönüştürülmesini sağlar. `window_size` parametresi `config.yaml` üzerinden okunmalıdır.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Pencerelere bölünecek veri çerçevesi. Zaman sırasına göre sıralanmış olduğu varsayılır.
+    window_size : int
+        Her bir pencerenin içereceği zaman adımı sayısı.
+    feature_cols : list of str, optional
+        Pencereye dahil edilecek özellik (feature) sütunları. Belirtilmezse tüm sayısal sütunlar alınır.
+    label_col : str, optional
+        Hedef (etiket) değişkeninin sütun adı. Belirtilirse, her pencerenin son adımındaki
+        etiket değeri o pencerenin etiketi olarak alınır.
+
+    Returns
+    -------
+    np.ndarray veya tuple
+        - Eğer `label_col` None ise: 
+          X (shape: (N - window_size + 1, window_size, num_features))
+        - Eğer `label_col` belirtilmişse: 
+          (X, y) döner. (y shape: (N - window_size + 1,))
+
+    Raises
+    ------
+    ValueError
+        df boş ise veya window_size veri sayısından büyükse.
+    """
+    if df is None or df.empty:
+        raise ValueError("Veri çerçevesi boş veya None olamaz.")
+        
+    if window_size < 1:
+        raise ValueError(f"window_size 1'den büyük olmalıdır, verilen: {window_size}")
+
+    if len(df) < window_size:
+        raise ValueError(f"Veri boyutu ({len(df)}) pencere boyutundan ({window_size}) küçük olamaz.")
+
+    if feature_cols is None:
+        feature_cols = df.select_dtypes(include=["number"]).columns.tolist()
+        if label_col in feature_cols:
+            feature_cols.remove(label_col)
+
+    if not feature_cols:
+        raise ValueError("Pencereleme yapılacak herhangi bir özellik sütunu bulunamadı.")
+
+    X_data = df[feature_cols].values
+    
+    # Kayan pencereleri oluştur (N - window_size + 1) adet
+    num_windows = len(df) - window_size + 1
+    X_windows = np.array([X_data[i : i + window_size] for i in range(num_windows)])
+    
+    logging.info(f"Sliding window işlemi tamamlandı. Window size: {window_size}, X shape: {X_windows.shape}")
+    
+    if label_col is not None:
+        if label_col not in df.columns:
+            raise ValueError(f"Belirtilen label_col ({label_col}) veri setinde bulunamadı.")
+        
+        y_data = df[label_col].values
+        # Genellikle problem, pencerenin son elemanına veya bir sonraki elemana göre etiketlenir.
+        # Bu projede "anomali tespiti" (örneğin son adımdaki anomali) olarak düşünülürse:
+        y_windows = np.array([y_data[i + window_size - 1] for i in range(num_windows)])
+        logging.info(f"Label sütunu ({label_col}) işlendi. y shape: {y_windows.shape}")
+        return X_windows, y_windows
+
+    return X_windows

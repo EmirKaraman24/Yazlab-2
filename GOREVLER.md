@@ -38,8 +38,8 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (EMIR) Veri sızıntısını engelleyecek şekilde preprocess adımlarını bağlayan pipeline oluşturuldu.
 - `[x]` (ARKADAS) Pipeline için birim testi yazıldı (test veri setine fit edilmediğinden emin olundu).
 - `[x]` (EMIR) Zaman bağımsız veri setleri (X_train, y_train vs.) diske kaydedilme mantığı eklendi.
-- `[ ]` (ARKADAS) Gürültülü veri senaryosu için Gaussian Noise ekleyen fonksiyon eklendi.
-- `[ ]` (EMIR) Sliding window işlemi ile verileri (window_size) pencerelerine bölen algoritma yazıldı.
+- `[x]` (ARKADAS) Gürültülü veri senaryosu için Gaussian Noise ekleyen fonksiyon eklendi.
+- `[x]` (EMIR) Sliding window işlemi ile verileri (window_size) pencerelerine bölen algoritma yazıldı.
 - `[ ]` (ARKADAS) Veri ön işleme tamamlandı, pipeline baştan sona entegre edildi.
 
 ## Aşama 3: Otomata Modeli ve SAX (Commit 19 - 30)
