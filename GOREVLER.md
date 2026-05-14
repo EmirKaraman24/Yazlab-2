@@ -40,7 +40,7 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (EMIR) Zaman bağımsız veri setleri (X_train, y_train vs.) diske kaydedilme mantığı eklendi.
 - `[x]` (ARKADAS) Gürültülü veri senaryosu için Gaussian Noise ekleyen fonksiyon eklendi.
 - `[x]` (EMIR) Sliding window işlemi ile verileri (window_size) pencerelerine bölen algoritma yazıldı.
-- `[ ]` (ARKADAS) Veri ön işleme tamamlandı, pipeline baştan sona entegre edildi.
+- `[X]` (ARKADAS) Veri ön işleme tamamlandı, pipeline baştan sona entegre edildi.
 
 ## Aşama 3: Otomata Modeli ve SAX (Commit 19 - 30)
 - `[ ]` (EMIR) PAA (Piecewise Aggregate Approximation) algoritması eklendi.
