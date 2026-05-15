@@ -43,7 +43,7 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[X]` (ARKADAS) Veri ön işleme tamamlandı, pipeline baştan sona entegre edildi.
 
 ## Aşama 3: Otomata Modeli ve SAX (Commit 19 - 30)
-- `[ ]` (EMIR) PAA (Piecewise Aggregate Approximation) algoritması eklendi.
+- `[x]` (EMIR) PAA (Piecewise Aggregate Approximation) algoritması eklendi.
 - `[ ]` (ARKADAS) SAX (Symbolic Aggregate approXimation) algoritması eklendi.
 - `[ ]` (EMIR) Sadece train verisi üzerinden SAX sözlüğü çıkaran ve pattern belirleyen kod yazıldı.
 - `[ ]` (ARKADAS) Train içerisindeki state (durum) listesini belirleyen yapı eklendi.
