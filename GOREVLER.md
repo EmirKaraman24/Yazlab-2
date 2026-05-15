@@ -44,7 +44,7 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 
 ## Aşama 3: Otomata Modeli ve SAX (Commit 19 - 30)
 - `[x]` (EMIR) PAA (Piecewise Aggregate Approximation) algoritması eklendi.
-- `[ ]` (ARKADAS) SAX (Symbolic Aggregate approXimation) algoritması eklendi.
+- `[x]` (ARKADAS) SAX (Symbolic Aggregate approXimation) algoritması eklendi.
 - `[ ]` (EMIR) Sadece train verisi üzerinden SAX sözlüğü çıkaran ve pattern belirleyen kod yazıldı.
 - `[ ]` (ARKADAS) Train içerisindeki state (durum) listesini belirleyen yapı eklendi.
 - `[ ]` (EMIR) Durumlar arası (State transitions) geçiş sayılarını sayan algoritma oluşturuldu.
