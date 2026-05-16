@@ -46,7 +46,7 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (EMIR) PAA (Piecewise Aggregate Approximation) algoritması eklendi.
 - `[x]` (ARKADAS) SAX (Symbolic Aggregate approXimation) algoritması eklendi.
 - `[x]` (EMIR) Sadece train verisi üzerinden SAX sözlüğü çıkaran ve pattern belirleyen kod yazıldı.
-- `[ ]` (ARKADAS) Train içerisindeki state (durum) listesini belirleyen yapı eklendi.
+- `[x]` (ARKADAS) Train içerisindeki state (durum) listesini belirleyen yapı eklendi.
 - `[ ]` (EMIR) Durumlar arası (State transitions) geçiş sayılarını sayan algoritma oluşturuldu.
 - `[ ]` (ARKADAS) Sayımları frekans tabanlı geçiş olasılıklarına (Transition Probabilities) çeviren matematiksel mantık eklendi.
 - `[ ]` (EMIR) Olasılıksal Otomata ana sınıfı (Probabilistic Automata Class) yaratıldı.
