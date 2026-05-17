@@ -122,3 +122,44 @@ def extract_state_list(sax_strings: list[str]) -> dict:
         "id_to_state": id_to_state,
         "num_states": len(states),
     }
+
+
+def count_state_transitions(sax_strings: list[str], state_to_id: dict) -> list[list[int]]:
+    """
+    SAX sembol dizileri üzerinde ardışık durum (state) geçişlerinin sayılarını hesaplar.
+
+    Kural (Data Leakage Yasak):
+        Geçiş matrisi SADECE eğitim (train) verisi dizilimi korunarak hesaplanmalıdır.
+
+    Parameters
+    ----------
+    sax_strings : list of str
+        Train verisine uygulanan SAX dönüşümü sonucu elde edilen ardışık sembol dizileri.
+    state_to_id : dict
+        Durum adından tam sayı kimliğine eşleme. `extract_state_list` çıktısındaki 
+        'state_to_id' kullanılmalıdır.
+
+    Returns
+    -------
+    list of list of int
+        Boyutu (num_states x num_states) olan 2 boyutlu geçiş sayım matrisi.
+        (i, j) elemanı, i durumundan j durumuna kaç kez geçildiğini gösterir.
+    """
+    if not sax_strings or not state_to_id:
+        return []
+
+    num_states = len(state_to_id)
+    transition_counts = [[0 for _ in range(num_states)] for _ in range(num_states)]
+
+    for i in range(len(sax_strings) - 1):
+        current_state = sax_strings[i]
+        next_state = sax_strings[i+1]
+
+        if current_state in state_to_id and next_state in state_to_id:
+            current_id = state_to_id[current_state]
+            next_id = state_to_id[next_state]
+            transition_counts[current_id][next_id] += 1
+
+    logging.info("Durumlar arası geçiş sayıları (transition counts) hesaplandı.")
+    return transition_counts
+
