@@ -3,7 +3,9 @@ Olasılıksal Otomata (Probabilistic Automata) modeli için gerekli bileşenleri
 barındıran modül.
 
 Bu modül, SAX ile sembolleştirilmiş zaman serisi verilerinden pattern sözlüğü
-çıkarmak ve devamında durum (state) geçişlerini hesaplamak için kullanılacaktır.
+çıkarmak, durum (state) listesini belirlemek, geçiş sayılarını saymak ve
+bu sayıları frekans tabanlı geçiş olasılıklarına (Transition Probabilities)
+dönüştürmek için kullanılır.
 """
 
 import logging
@@ -163,3 +165,92 @@ def count_state_transitions(sax_strings: list[str], state_to_id: dict) -> list[l
     logging.info("Durumlar arası geçiş sayıları (transition counts) hesaplandı.")
     return transition_counts
 
+
+def compute_transition_probabilities(
+    transition_counts: list[list[int]],
+) -> list[list[float]]:
+    """
+    Geçiş sayım matrisini frekans tabanlı geçiş olasılıklarına (Transition
+    Probability Matrix) dönüştürür.
+
+    Her satır için matematiksel dönüşüm şu şekildedir::
+
+        P(i -> j) = count(i -> j) / sum_j(count(i -> j))
+
+    Eğer bir satırın toplam geçiş sayısı sıfır ise (yani o durum eğitim
+    verisinde hiçbir zaman kaynak durum olarak görülmemişse), o satıra düzgün
+    (uniform) dağılım atanır; bu sayede bölme-sıfır hatası önlenir ve
+    sonraki aşamalar için geçerli bir olasılık matrisi garanti edilir.
+
+    Kural (Data Leakage Yasak):
+        Bu fonksiyon yalnızca ``count_state_transitions`` ile üretilmiş,
+        SADECE eğitim verisine ait sayım matrisi üzerinde çağrılmalıdır.
+
+    Parameters
+    ----------
+    transition_counts : list of list of int
+        ``count_state_transitions`` fonksiyonunun döndürdüğü
+        (num_states x num_states) boyutunda geçiş sayım matrisi.
+
+    Returns
+    -------
+    list of list of float
+        (num_states x num_states) boyutunda geçiş olasılık matrisi.
+        Her satırın toplamı 1.0'a eşittir.
+        Boş girdi verilirse boş liste döner.
+
+    Raises
+    ------
+    ValueError
+        Matris kare (square) değilse.
+
+    Examples
+    --------
+    >>> counts = [[2, 1, 0], [0, 3, 1], [0, 0, 0]]
+    >>> probs = compute_transition_probabilities(counts)
+    >>> probs[0]          # 2/(2+1+0) = 0.667, 1/3 = 0.333, 0.0
+    [0.6666666666666666, 0.3333333333333333, 0.0]
+    >>> probs[2]          # Sıfır satırı → düzgün (uniform) dağılım
+    [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]
+    """
+    if not transition_counts:
+        logging.warning(
+            "Boş geçiş sayım matrisi verildi. Boş olasılık matrisi döndürülüyor."
+        )
+        return []
+
+    num_states = len(transition_counts)
+
+    # Kare matris doğrulama
+    for row_idx, row in enumerate(transition_counts):
+        if len(row) != num_states:
+            raise ValueError(
+                f"Geçiş sayım matrisi kare (square) olmalıdır. "
+                f"{row_idx}. satırın uzunluğu {len(row)}, "
+                f"beklenen {num_states}."
+            )
+
+    uniform_probability = 1.0 / num_states  # sıfır satırları için
+    transition_probabilities: list[list[float]] = []
+
+    for row in transition_counts:
+        row_total = sum(row)
+
+        if row_total == 0:
+            # Bu durum eğitimde hiç kaynak olmamış → uniform dağılım ata
+            normalized_row = [uniform_probability] * num_states
+            logging.debug(
+                "Geçiş sayısı sıfır olan bir satır tespit edildi; "
+                "düzgün (uniform) dağılım atandı."
+            )
+        else:
+            # Frekans tabanlı normalleştirme: count / toplam
+            normalized_row = [count / row_total for count in row]
+
+        transition_probabilities.append(normalized_row)
+
+    logging.info(
+        "Geçiş olasılık matrisi (Transition Probability Matrix) hesaplandı. "
+        f"Boyut: {num_states}x{num_states}"
+    )
+    return transition_probabilities

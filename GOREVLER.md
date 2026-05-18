@@ -48,7 +48,7 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (EMIR) Sadece train verisi üzerinden SAX sözlüğü çıkaran ve pattern belirleyen kod yazıldı.
 - `[x]` (ARKADAS) Train içerisindeki state (durum) listesini belirleyen yapı eklendi.
 - `[x]` (EMIR) Durumlar arası (State transitions) geçiş sayılarını sayan algoritma oluşturuldu.
-- `[ ]` (ARKADAS) Sayımları frekans tabanlı geçiş olasılıklarına (Transition Probabilities) çeviren matematiksel mantık eklendi.
+- `[x]` (ARKADAS) Sayımları frekans tabanlı geçiş olasılıklarına (Transition Probabilities) çeviren matematiksel mantık eklendi.
 - `[ ]` (EMIR) Olasılıksal Otomata ana sınıfı (Probabilistic Automata Class) yaratıldı.
 - `[ ]` (ARKADAS) Unseen durum tespiti mantığı sisteme dahil edildi.
 - `[ ]` (EMIR) Levenshtein (Edit distance) mesafe bulma algoritması uygulandı.
