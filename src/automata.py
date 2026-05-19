@@ -254,3 +254,150 @@ def compute_transition_probabilities(
         f"Boyut: {num_states}x{num_states}"
     )
     return transition_probabilities
+
+
+def levenshtein_distance(s1: str, s2: str) -> int:
+    """
+    İki sembol dizisi (string) arasındaki Levenshtein (Edit) mesafesini hesaplar.
+    Ekleme (insertion), silme (deletion) ve yer değiştirme (substitution)
+    işlemlerinin minimum maliyetini bulur.
+
+    Parameters
+    ----------
+    s1 : str
+        Birinci sembol dizisi.
+    s2 : str
+        İkinci sembol dizisi.
+
+    Returns
+    -------
+    int
+        İki dizi arasındaki minimum düzenleme mesafesi.
+    """
+    if len(s1) < len(s2):
+        return levenshtein_distance(s2, s1)
+
+    if len(s2) == 0:
+        return len(s1)
+
+    previous_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+
+    return previous_row[-1]
+
+
+class ProbabilisticAutomata:
+    """
+    Zaman serisi anomali tespiti için Olasılıksal Otomata (Probabilistic Automata) modeli.
+
+    Eğitim verisi üzerinden SAX sembollerini alarak durumları, sözlüğü ve
+    geçiş olasılıklarını (transition probabilities) öğrenir. Test aşamasında,
+    görülmemiş (unseen) bir örüntü gelirse, Levenshtein mesafesi kullanarak
+    en yakın duruma atama yapar.
+    """
+
+    def __init__(self):
+        self.sax_dictionary: list[str] = []
+        self.states: list[str] = []
+        self.state_to_id: dict[str, int] = {}
+        self.id_to_state: dict[int, str] = {}
+        self.transition_probabilities: list[list[float]] = []
+        self.num_states: int = 0
+        self.is_fitted: bool = False
+
+    def fit(self, train_sax_strings: list[str]):
+        """
+        SADECE eğitim (train) verisi kullanılarak modeli eğitir.
+        Sözlük, durumlar ve olasılık matrisi hesaplanır.
+
+        Parameters
+        ----------
+        train_sax_strings : list of str
+            Eğitim verisinden elde edilmiş sıralı SAX dizileri.
+        """
+        if not train_sax_strings:
+            raise ValueError("Eğitim verisi (train_sax_strings) boş olamaz.")
+
+        self.sax_dictionary = extract_sax_dictionary(train_sax_strings)
+        
+        state_info = extract_state_list(train_sax_strings)
+        self.states = state_info["states"]
+        self.state_to_id = state_info["state_to_id"]
+        self.id_to_state = state_info["id_to_state"]
+        self.num_states = state_info["num_states"]
+
+        transition_counts = count_state_transitions(train_sax_strings, self.state_to_id)
+        self.transition_probabilities = compute_transition_probabilities(transition_counts)
+        
+        self.is_fitted = True
+        logging.info("ProbabilisticAutomata modeli başarıyla eğitildi.")
+
+    def handle_unseen_state(self, unseen_state: str) -> str:
+        """
+        Sistem daha önce karşılaşmadığı (unseen) bir SAX örüntüsüyle
+        karşılaştığında çalışır. Levenshtein mesafesi kullanarak 
+        sözlükteki en yakın duruma eşleştirir.
+
+        Kural (Unseen Kuralı):
+            Eğitimde olmayan örüntüler Levenshtein ile en yakın duruma
+            atanır ve sistem oradan devam eder.
+
+        Parameters
+        ----------
+        unseen_state : str
+            Sözlükte bulunmayan yeni SAX örüntüsü.
+
+        Returns
+        -------
+        str
+            Sözlükte (dictionary) bulunan ve Levenshtein mesafesi
+            en düşük olan durum.
+        """
+        if not self.is_fitted:
+            raise RuntimeError("Model eğitilmedi. Lütfen önce fit() çağırın.")
+
+        if not self.sax_dictionary:
+            raise RuntimeError("SAX sözlüğü boş.")
+
+        closest_state = min(
+            self.sax_dictionary,
+            key=lambda state: levenshtein_distance(unseen_state, state)
+        )
+        
+        logging.warning(
+            f"Unseen durum tespit edildi: '{unseen_state}'. "
+            f"Levenshtein mesafesi ile en yakın duruma atandı: '{closest_state}'"
+        )
+        return closest_state
+
+    def get_state_id(self, state: str) -> int:
+        """
+        Bir SAX durumunun tam sayı (integer) kimliğini döndürür.
+        Eğer durum daha önce görülmemiş (unseen) ise, önce handle_unseen_state
+        kullanılarak en yakın duruma eşleştirilir.
+
+        Parameters
+        ----------
+        state : str
+            Kimliği istenen SAX durumu.
+
+        Returns
+        -------
+        int
+            Durumun tam sayı kimliği (ID).
+        """
+        if not self.is_fitted:
+            raise RuntimeError("Model eğitilmedi. Lütfen önce fit() çağırın.")
+
+        if state not in self.state_to_id:
+            matched_state = self.handle_unseen_state(state)
+            return self.state_to_id[matched_state]
+        
+        return self.state_to_id[state]
