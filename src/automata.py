@@ -3,9 +3,10 @@ Olasılıksal Otomata (Probabilistic Automata) modeli için gerekli bileşenleri
 barındıran modül.
 
 Bu modül, SAX ile sembolleştirilmiş zaman serisi verilerinden pattern sözlüğü
-çıkarmak, durum (state) listesini belirlemek, geçiş sayılarını saymak ve
+çıkarmak, durum (state) listesini belirlemek, geçiş sayılarını saymak,
 bu sayıları frekans tabanlı geçiş olasılıklarına (Transition Probabilities)
-dönüştürmek için kullanılır.
+dönüştürmek ve görülmemiş (unseen) örüntüleri Levenshtein mesafesi ile en yakın
+bilinen duruma eşleyerek sistemin akışını oradan sürdürmek için kullanılır.
 """
 
 import logging
@@ -300,7 +301,20 @@ class ProbabilisticAutomata:
     Eğitim verisi üzerinden SAX sembollerini alarak durumları, sözlüğü ve
     geçiş olasılıklarını (transition probabilities) öğrenir. Test aşamasında,
     görülmemiş (unseen) bir örüntü gelirse, Levenshtein mesafesi kullanarak
-    en yakın duruma atama yapar.
+    en yakın duruma atama yapar ve sistem oradan devam eder.
+
+    Temel Metotlar
+    --------------
+    fit                  : Modeli eğitim verisiyle eğitir.
+    handle_unseen_state  : Levenshtein ile en yakın bilinen durumu döndürür.
+    resolve_state        : Herhangi bir durumu (seen ya da unseen) bilinen bir
+                           duruma çözer.
+    resolve_and_advance  : Mevcut durumdan bir adım ilerler; unseen ise önce
+                           çözer, ardından geçiş satırını döndürür.
+    map_sequence_to_states: Bir SAX dizisini baştan sona otomata üzerinde
+                           yürüterek çözülmüş durum zincirini ve geçiş
+                           olasılıklarını döndürür.
+    get_state_id         : Durum adından tamsayı ID'si döndürür (unseen-safe).
     """
 
     def __init__(self):
@@ -401,3 +415,172 @@ class ProbabilisticAutomata:
             return self.state_to_id[matched_state]
         
         return self.state_to_id[state]
+
+    # ------------------------------------------------------------------
+    # Unseen eşleştirme ve devam mantığı
+    # ------------------------------------------------------------------
+
+    def resolve_state(self, state: str) -> str:
+        """
+        Herhangi bir SAX örüntüsünü sözlükte bilinen bir duruma çözer.
+
+        Durum zaten sözlükte mevcutsa doğrudan döndürür. Görülmemiş
+        (unseen) bir örüntü ise ``handle_unseen_state`` ile Levenshtein
+        mesafesi en düşük duruma eşleştirilir.
+
+        Parameters
+        ----------
+        state : str
+            Çözülecek SAX örüntüsü (seen veya unseen olabilir).
+
+        Returns
+        -------
+        str
+            Sözlükte kesinlikle var olan bir durum adı.
+        """
+        if not self.is_fitted:
+            raise RuntimeError("Model eğitilmedi. Lütfen önce fit() çağırın.")
+
+        if state in self.state_to_id:
+            return state
+
+        return self.handle_unseen_state(state)
+
+    def resolve_and_advance(
+        self,
+        current_state: str,
+        next_state: str,
+    ) -> tuple[str, str, list[float]]:
+        """
+        Mevcut durumdan bir adım ilerler.
+
+        Her iki durum da ``resolve_state`` ile çözülür (unseen ise
+        Levenshtein ile en yakın bilinen duruma eşleştirilir). Ardından
+        mevcut durumun geçiş olasılık satırı döndürülerek sistemin
+        takip eden adımda bu bilgiyi kullanması sağlanır.
+
+        Parameters
+        ----------
+        current_state : str
+            Mevcut SAX durumu (seen veya unseen olabilir).
+        next_state : str
+            Bir sonraki SAX durumu (seen veya unseen olabilir).
+
+        Returns
+        -------
+        tuple[str, str, list[float]]
+            - resolved_current : Çözülmüş mevcut durum adı.
+            - resolved_next    : Çözülmüş sonraki durum adı.
+            - transition_row   : Çözülmüş mevcut durumun geçiş olasılık
+                                 vektörü (uzunluk = num_states).
+
+        Examples
+        --------
+        >>> automata = ProbabilisticAutomata()
+        >>> automata.fit(["abc", "bcd", "abc", "cde", "bcd"])
+        >>> resolved_cur, resolved_nxt, probs = automata.resolve_and_advance("xyz", "bcd")
+        >>> resolved_cur in automata.states
+        True
+        >>> len(probs) == automata.num_states
+        True
+        """
+        if not self.is_fitted:
+            raise RuntimeError("Model eğitilmedi. Lütfen önce fit() çağırın.")
+
+        resolved_current = self.resolve_state(current_state)
+        resolved_next = self.resolve_state(next_state)
+
+        current_id = self.state_to_id[resolved_current]
+        transition_row = self.transition_probabilities[current_id]
+
+        logging.debug(
+            f"resolve_and_advance: '{current_state}' → '{resolved_current}' "
+            f"| sonraki: '{next_state}' → '{resolved_next}'"
+        )
+        return resolved_current, resolved_next, transition_row
+
+    def map_sequence_to_states(
+        self,
+        sax_sequence: list[str],
+    ) -> dict:
+        """
+        Bir SAX sembol dizisini baştan sona otomata üzerinde yürütür.
+
+        Her eleman ``resolve_state`` ile bilinen bir duruma çözülür;
+        ardışık çiftler için ``resolve_and_advance`` çağrılarak geçiş
+        olasılık vektörleri toplanır. Bu sayede görülmemiş (unseen)
+        örüntüler içeren bir test dizisi bile kesintisiz işlenebilir.
+
+        Parameters
+        ----------
+        sax_sequence : list of str
+            İşlenecek SAX örüntü dizisi. En az 1 eleman içermelidir.
+
+        Returns
+        -------
+        dict
+            Aşağıdaki anahtarları içeren sözlük:
+
+            - ``resolved_states`` (list of str): Her elemanın çözülmüş
+              durum adını içeren liste (uzunluk = len(sax_sequence)).
+            - ``transition_rows`` (list of list[float]): Ardışık her
+              (i, i+1) çifti için mevcut durumun geçiş olasılık vektörü.
+              Uzunluğu len(sax_sequence) - 1 olup boş dizi için [].
+            - ``unseen_count`` (int): Orijinal dizide kaç adet unseen
+              örüntü bulunduğu.
+
+        Raises
+        ------
+        ValueError
+            ``sax_sequence`` None veya boş ise.
+        RuntimeError
+            Model henüz eğitilmemişse.
+
+        Examples
+        --------
+        >>> automata = ProbabilisticAutomata()
+        >>> automata.fit(["abc", "bcd", "abc", "cde", "bcd"])
+        >>> result = automata.map_sequence_to_states(["abc", "xyz", "bcd"])
+        >>> len(result["resolved_states"])
+        3
+        >>> result["unseen_count"]
+        1
+        """
+        if not self.is_fitted:
+            raise RuntimeError("Model eğitilmedi. Lütfen önce fit() çağırın.")
+
+        if not sax_sequence:
+            raise ValueError("sax_sequence boş veya None olamaz.")
+
+        resolved_states: list[str] = []
+        transition_rows: list[list[float]] = []
+        unseen_count: int = 0
+
+        # İlk elemanı çöz
+        for raw_state in sax_sequence:
+            if raw_state not in self.state_to_id:
+                unseen_count += 1
+            resolved_states.append(self.resolve_state(raw_state))
+
+        # Ardışık çiftler için geçiş vektörlerini topla
+        for i in range(len(resolved_states) - 1):
+            current_id = self.state_to_id[resolved_states[i]]
+            transition_rows.append(self.transition_probabilities[current_id])
+
+        if unseen_count > 0:
+            logging.info(
+                f"map_sequence_to_states: {unseen_count} unseen örüntü "
+                "Levenshtein ile en yakın duruma eşleştirildi."
+            )
+
+        logging.info(
+            f"map_sequence_to_states tamamlandı. "
+            f"Dizi uzunluğu: {len(sax_sequence)}, "
+            f"Unseen sayısı: {unseen_count}"
+        )
+
+        return {
+            "resolved_states": resolved_states,
+            "transition_rows": transition_rows,
+            "unseen_count": unseen_count,
+        }
