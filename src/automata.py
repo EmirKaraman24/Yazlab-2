@@ -314,6 +314,7 @@ class ProbabilisticAutomata:
     map_sequence_to_states: Bir SAX dizisini baştan sona otomata üzerinde
                            yürüterek çözülmüş durum zincirini ve geçiş
                            olasılıklarını döndürür.
+    compute_path_probability: Verilen bir dizinin (path) toplam geçiş olasılığını hesaplar.
     get_state_id         : Durum adından tamsayı ID'si döndürür (unseen-safe).
     """
 
@@ -584,3 +585,49 @@ class ProbabilisticAutomata:
             "transition_rows": transition_rows,
             "unseen_count": unseen_count,
         }
+
+    def compute_path_probability(self, sax_sequence: list[str]) -> float:
+        """
+        Verilen SAX dizisinin (path) otomata üzerindeki toplam olasılığını hesaplar.
+        Ardışık durum geçiş olasılıklarının çarpımı (product of consecutive transition 
+        probabilities) olarak tanımlanır.
+
+        Parameters
+        ----------
+        sax_sequence : list of str
+            Olasılığı hesaplanacak SAX örüntü dizisi. En az 2 eleman içermelidir.
+
+        Returns
+        -------
+        float
+            Yolun toplam geçiş olasılığı (Path Probability).
+            Eğer dizi 2 elemandan kısaysa 1.0 döner.
+            
+        Raises
+        ------
+        RuntimeError
+            Model henüz eğitilmemişse.
+        """
+        if not self.is_fitted:
+            raise RuntimeError("Model eğitilmedi. Lütfen önce fit() çağırın.")
+
+        if not sax_sequence or len(sax_sequence) < 2:
+            return 1.0
+
+        path_prob = 1.0
+        
+        mapped_data = self.map_sequence_to_states(sax_sequence)
+        resolved_states = mapped_data["resolved_states"]
+
+        for i in range(len(resolved_states) - 1):
+            next_state = resolved_states[i+1]
+            next_id = self.state_to_id[next_state]
+            
+            prob = mapped_data["transition_rows"][i][next_id]
+            path_prob *= prob
+
+        logging.info(
+            f"Path probability hesaplandı. "
+            f"Dizi uzunluğu: {len(sax_sequence)}, Olasılık: {path_prob:.4e}"
+        )
+        return path_prob

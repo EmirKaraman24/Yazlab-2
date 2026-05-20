@@ -53,7 +53,7 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (ARKADAS) Unseen durum tespiti mantığı sisteme dahil edildi.
 - `[x]` (EMIR) Levenshtein (Edit distance) mesafe bulma algoritması uygulandı.
 - `[x]` (ARKADAS) Unseen durumunda en yakın pattern'ı bulup sistemin oradan devam etmesini sağlayan eşleştirme yazıldı.
-- `[ ]` (EMIR) Path probability hesaplayan (ardışık geçiş olasılıklarının çarpımı) metot eklendi.
+- `[x]` (EMIR) Path probability hesaplayan (ardışık geçiş olasılıklarının çarpımı) metot eklendi.
 - `[ ]` (ARKADAS) Unseen davranışı ve Levenshtein için zorunlu birim testleri (unit tests) yazıldı.
 
 ## Aşama 4: Derin Öğrenme Modelleri (Commit 31 - 40)
