@@ -54,7 +54,7 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (EMIR) Levenshtein (Edit distance) mesafe bulma algoritması uygulandı.
 - `[x]` (ARKADAS) Unseen durumunda en yakın pattern'ı bulup sistemin oradan devam etmesini sağlayan eşleştirme yazıldı.
 - `[x]` (EMIR) Path probability hesaplayan (ardışık geçiş olasılıklarının çarpımı) metot eklendi.
-- `[ ]` (ARKADAS) Unseen davranışı ve Levenshtein için zorunlu birim testleri (unit tests) yazıldı.
+- `[x]` (ARKADAS) Unseen davranışı ve Levenshtein için zorunlu birim testleri (unit tests) yazıldı.
 
 ## Aşama 4: Derin Öğrenme Modelleri (Commit 31 - 40)
 - `[ ]` (EMIR) Keras/TensorFlow importları ve genel model class yapısı kuruldu.
