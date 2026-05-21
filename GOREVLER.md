@@ -57,7 +57,7 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (ARKADAS) Unseen davranışı ve Levenshtein için zorunlu birim testleri (unit tests) yazıldı.
 
 ## Aşama 4: Derin Öğrenme Modelleri (Commit 31 - 40)
-- `[ ]` (EMIR) Keras/TensorFlow importları ve genel model class yapısı kuruldu.
+- `[x]` (EMIR) Keras/TensorFlow importları ve genel model class yapısı kuruldu.
 - `[ ]` (ARKADAS) 1D-CNN modeli `config.yaml` parametrelerine bağlı olarak tanımlandı.
 - `[ ]` (EMIR) LSTM modeli `config.yaml` parametrelerine bağlı olarak tanımlandı.
 - `[ ]` (ARKADAS) Model eğitim fonksiyonu (fit_model), batch_size=32 kuralı ile yazıldı.
