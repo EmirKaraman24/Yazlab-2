@@ -26,6 +26,14 @@ deep_learning_params:
   epochs: 50
   batch_size: 32
   early_stopping_patience: 5
+  learning_rate: 0.001            # Adam optimizer öğrenme hızı
+
+  # 1D-CNN mimarisi parametreleri
+  cnn_filters: 64                 # İlk Conv1D katmanındaki filtre sayısı (blok 2'de 2x kullanılır)
+  cnn_kernel_size: 3              # Evrişim penceresi boyutu
+  cnn_pool_size: 2                # MaxPooling penceresi boyutu
+  cnn_dense_units: 64             # Tam bağlantılı gizli katman nöron sayısı
+  cnn_dropout_rate: 0.3           # Dropout oranı (aşırı öğrenme önleme)
 
 experiment_scenarios:
   run_original: true
