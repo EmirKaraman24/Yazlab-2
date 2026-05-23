@@ -61,7 +61,7 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (ARKADAS) 1D-CNN modeli `config.yaml` parametrelerine bağlı olarak tanımlandı.
 - `[x]` (EMIR) LSTM modeli `config.yaml` parametrelerine bağlı olarak tanımlandı.
 - `[x]` (ARKADAS) Model eğitim fonksiyonu (fit_model), batch_size=32 kuralı ile yazıldı.
-- `[ ]` (EMIR) Early stopping callback (patience=5, validation_loss takibi) eklendi.
+- `[x]` (EMIR) Early stopping callback (patience=5, validation_loss takibi) eklendi.
 - `[ ]` (ARKADAS) Model tahminleri ve sonuçlarını döndüren fonksiyonlar (predict_model) yazıldı.
 - `[ ]` (EMIR) Modellerin eğitilmesi için tek bir döngü (train_all_models) eklendi.
 - `[ ]` (ARKADAS) Eğitim sürecindeki loss değerlerini loglayan callback sistemi yapıldı.

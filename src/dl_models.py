@@ -75,6 +75,10 @@ class BaseTimeSeriesModel:
         Keras modelini eğitir. `batch_size=32` kuralı dahil olmak üzere
         hiperparametreler `config.yaml` üzerinden alınır.
 
+        Early stopping, `validation_loss` (val_loss) takibiyle etkinleştirilir;
+        `patience` değeri `config.yaml` içindeki `early_stopping_patience`
+        anahtarından okunur (varsayılan: 5).
+
         Parameters
         ----------
         X_train : np.ndarray
@@ -82,13 +86,14 @@ class BaseTimeSeriesModel:
         y_train : np.ndarray
             Eğitim etiketleri.
         X_val : np.ndarray, optional
-            Doğrulama (validation) özellikleri.
+            Doğrulama (validation) özellikleri. Early stopping için zorunludur;
+            sağlanmadığında early stopping devre dışı kalır.
         y_val : np.ndarray, optional
             Doğrulama (validation) etiketleri.
         config_path : str
             Konfigürasyon dosyasının yolu.
         **kwargs
-            Modelin `fit` metoduna iletilecek ek parametreler (örn: callbacks).
+            Modelin `fit` metoduna iletilecek ek parametreler (örn: ek callbacks).
 
         Returns
         -------
@@ -100,11 +105,33 @@ class BaseTimeSeriesModel:
 
         config = load_config(config_path)
         dl_params = config.get("deep_learning_params", {})
-        
+
         batch_size = dl_params.get("batch_size", 32)
         epochs = dl_params.get("epochs", 50)
+        early_stopping_patience = dl_params.get("early_stopping_patience", 5)
 
         validation_data = (X_val, y_val) if X_val is not None and y_val is not None else None
+
+        # Early stopping: yalnızca doğrulama verisi mevcutsa etkinleştirilir
+        callback_list = kwargs.pop("callbacks", [])
+        if validation_data is not None:
+            early_stopping_callback = callbacks.EarlyStopping(
+                monitor="val_loss",
+                patience=early_stopping_patience,
+                restore_best_weights=True,
+                verbose=1,
+            )
+            callback_list = [early_stopping_callback] + list(callback_list)
+            logging.info(
+                "[%s] EarlyStopping etkin: monitor='val_loss', patience=%d, restore_best_weights=True",
+                self.model_name,
+                early_stopping_patience,
+            )
+        else:
+            logging.warning(
+                "[%s] Doğrulama verisi sağlanmadı; EarlyStopping devre dışı.",
+                self.model_name,
+            )
 
         logging.info(f"[{self.model_name}] Model eğitimi başlatılıyor... (Epochs: {epochs}, Batch Size: {batch_size})")
 
@@ -114,6 +141,7 @@ class BaseTimeSeriesModel:
             batch_size=batch_size,
             epochs=epochs,
             validation_data=validation_data,
+            callbacks=callback_list,
             **kwargs
         )
 
