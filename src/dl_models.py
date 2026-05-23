@@ -148,6 +148,114 @@ class BaseTimeSeriesModel:
         logging.info(f"[{self.model_name}] Eğitim süreci tamamlandı.")
         return history
 
+    def predict_proba(self, X: np.ndarray, batch_size: int = 32) -> np.ndarray:
+        """
+        Girdi dizileri için ham sigmoid olasılık skorlarını döndürür.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            Tahmin yapılacak girdi dizileri, şekil: (n_samples, sequence_length, num_features).
+        batch_size : int, optional
+            Tahmin sırasında kullanılacak toplu iş boyutu. Varsayılan: 32.
+
+        Returns
+        -------
+        np.ndarray
+            Her örnek için [0, 1] aralığında anomali olasılık skoru,
+            şekil: (n_samples,).
+        """
+        if self.model is None:
+            raise RuntimeError(
+                f"[{self.model_name}] Model oluşturulmamış! Önce `build_model()` çalıştırılmalı."
+            )
+
+        logging.info(
+            "[%s] predict_proba çalıştırılıyor: %d örnek, batch_size=%d",
+            self.model_name,
+            len(X),
+            batch_size,
+        )
+
+        raw_scores = self.model.predict(X, batch_size=batch_size, verbose=0)
+        # Keras çıktısı (n_samples, 1) şeklindedir; düzleştirilerek (n_samples,) döndürülür
+        return raw_scores.flatten()
+
+    def predict_model(
+        self,
+        X: np.ndarray,
+        y_true: np.ndarray = None,
+        threshold: float = 0.5,
+        batch_size: int = 32,
+        config_path: str = "config.yaml",
+    ) -> dict:
+        """
+        Model tahminlerini ve sonuç özetini döndürür.
+
+        Ham sigmoid skorları `threshold` eşiğiyle ikili (0/1) etiketlere
+        dönüştürülür. Eşik değeri, config.yaml içindeki
+        `prediction_threshold` anahtarından okunur; anahtar yoksa
+        `threshold` parametresi kullanılır.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            Tahmin yapılacak girdi dizileri, şekil: (n_samples, sequence_length, num_features).
+        y_true : np.ndarray, optional
+            Gerçek etiketler. Sağlanırsa sonuç sözlüğüne `y_true` alanı eklenir.
+        threshold : float, optional
+            Sigmoid skorunu 0/1 etikete çevirmek için kullanılan eşik.
+            config.yaml'da `prediction_threshold` tanımlıysa oradan okunur.
+            Varsayılan: 0.5.
+        batch_size : int, optional
+            Tahmin sırasında kullanılacak toplu iş boyutu. Varsayılan: 32.
+        config_path : str, optional
+            Konfigürasyon dosyasının yolu.
+
+        Returns
+        -------
+        dict
+            Aşağıdaki anahtarları içeren sonuç sözlüğü:
+
+            - ``model_name``  : Modelin adı (str).
+            - ``probabilities``: Ham sigmoid skorları, şekil (n_samples,) (np.ndarray).
+            - ``predictions``  : İkili tahmin etiketleri (0 veya 1), şekil (n_samples,) (np.ndarray).
+            - ``threshold``    : Kullanılan eşik değeri (float).
+            - ``n_samples``    : Tahmin yapılan örnek sayısı (int).
+            - ``n_anomalies``  : Anomali olarak etiketlenen örnek sayısı (int).
+            - ``y_true``       : Gerçek etiketler — yalnızca `y_true` sağlandığında (np.ndarray).
+        """
+        config = load_config(config_path)
+        dl_params = config.get("deep_learning_params", {})
+        # config.yaml'da tanımlı eşik değeri, parametre eşiğini geçersiz kılar
+        threshold = dl_params.get("prediction_threshold", threshold)
+
+        probabilities = self.predict_proba(X, batch_size=batch_size)
+        predictions = (probabilities >= threshold).astype(int)
+
+        n_anomalies = int(predictions.sum())
+        logging.info(
+            "[%s] Tahmin tamamlandı: %d örnek, eşik=%.2f, anomali=%d",
+            self.model_name,
+            len(X),
+            threshold,
+            n_anomalies,
+        )
+
+        result = {
+            "model_name": self.model_name,
+            "probabilities": probabilities,
+            "predictions": predictions,
+            "threshold": threshold,
+            "n_samples": len(X),
+            "n_anomalies": n_anomalies,
+        }
+
+        if y_true is not None:
+            result["y_true"] = np.asarray(y_true)
+
+        return result
+
 
 class CNN1DModel(BaseTimeSeriesModel):
     """
