@@ -35,6 +35,11 @@ deep_learning_params:
   cnn_dense_units: 64             # Tam bağlantılı gizli katman nöron sayısı
   cnn_dropout_rate: 0.3           # Dropout oranı (aşırı öğrenme önleme)
 
+  # LSTM mimarisi parametreleri
+  lstm_units: 64                  # LSTM katmanındaki nöron sayısı
+  lstm_dropout_rate: 0.3          # LSTM sonrası dropout oranı
+  lstm_dense_units: 32            # Çıkış öncesi gizli katman nöron sayısı
+
 experiment_scenarios:
   run_original: true
   run_noisy: true
