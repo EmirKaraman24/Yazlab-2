@@ -63,8 +63,8 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (ARKADAS) Model eğitim fonksiyonu (fit_model), batch_size=32 kuralı ile yazıldı.
 - `[x]` (EMIR) Early stopping callback (patience=5, validation_loss takibi) eklendi.
 - `[x]` (ARKADAS) Model tahminleri ve sonuçlarını döndüren fonksiyonlar (predict_model) yazıldı.
-- `[ ]` (EMIR) Modellerin eğitilmesi için tek bir döngü (train_all_models) eklendi.
-- `[ ]` (ARKADAS) Eğitim sürecindeki loss değerlerini loglayan callback sistemi yapıldı.
+- `[x]` (EMIR) Modellerin eğitilmesi için tek bir döngü (train_all_models) eklendi.
+- `[x]` (ARKADAS) Eğitim sürecindeki loss değerlerini loglayan callback sistemi yapıldı.
 - `[ ]` (EMIR) Eğitilmiş modelleri diske kaydeden ağırlık (weights) yönetim sistemi eklendi.
 - `[ ]` (ARKADAS) Modeller arası performans çıkarımı (inference) script'i hazırlandı.
 

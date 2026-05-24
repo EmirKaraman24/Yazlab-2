@@ -33,6 +33,22 @@ def load_config(config_path: str = "config.yaml") -> dict:
         return yaml.safe_load(config_file)
 
 
+class LossLoggingCallback(callbacks.Callback):
+    """
+    Eğitim sürecinde her epoch sonunda loss ve metrik değerlerini
+    standart log (logging) sistemine yazdıran özel Keras callback'i.
+    """
+    def __init__(self, model_name: str):
+        super().__init__()
+        self.model_name = model_name
+
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
+        log_str = f"[{self.model_name}] Epoch {epoch + 1}: "
+        log_str += ", ".join([f"{k}={v:.4f}" for k, v in logs.items()])
+        logging.info(log_str)
+
+
 class BaseTimeSeriesModel:
     """
     Zaman serisi tahmini veya anomali tespiti için temel derin öğrenme modeli sınıfı.
@@ -132,6 +148,10 @@ class BaseTimeSeriesModel:
                 "[%s] Doğrulama verisi sağlanmadı; EarlyStopping devre dışı.",
                 self.model_name,
             )
+
+        # Loss değerlerini loglayan callback sisteme dahil ediliyor
+        callback_list = list(callback_list)
+        callback_list.append(LossLoggingCallback(self.model_name))
 
         logging.info(f"[{self.model_name}] Model eğitimi başlatılıyor... (Epochs: {epochs}, Batch Size: {batch_size})")
 
@@ -463,3 +483,59 @@ class LSTMModel(BaseTimeSeriesModel):
 
         logging.info("[LSTM] Model başarıyla oluşturuldu ve derlendi.")
         return self.model
+
+
+def train_all_models(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    X_val: np.ndarray = None,
+    y_val: np.ndarray = None,
+    config_path: str = "config.yaml"
+) -> dict:
+    """
+    config.yaml'da belirtilen tüm derin öğrenme modellerini eğitir ve eğitilmiş
+    model nesnelerini içeren bir sözlük döndürür.
+
+    Parameters
+    ----------
+    X_train : np.ndarray
+        Eğitim özellikleri, şekil: (n_samples, sequence_length, num_features).
+    y_train : np.ndarray
+        Eğitim etiketleri, şekil: (n_samples,).
+    X_val : np.ndarray, optional
+        Doğrulama özellikleri.
+    y_val : np.ndarray, optional
+        Doğrulama etiketleri.
+    config_path : str
+        Konfigürasyon dosyasının yolu.
+
+    Returns
+    -------
+    dict
+        Eğitilmiş modeller. Anahtarlar model isimleri (örn. "LSTM", "1D-CNN"),
+        değerler BaseTimeSeriesModel alt sınıf örnekleridir.
+    """
+    config = load_config(config_path)
+    models_to_run = config.get("deep_learning_params", {}).get("models_to_run", ["LSTM", "1D-CNN"])
+    
+    sequence_length = X_train.shape[1]
+    num_features = X_train.shape[2]
+    
+    trained_models = {}
+    
+    for model_name in models_to_run:
+        logging.info(f"--- {model_name} Modeli Başlatılıyor ---")
+        if model_name == "LSTM":
+            model = LSTMModel(sequence_length, num_features, config_path)
+        elif model_name == "1D-CNN":
+            model = CNN1DModel(sequence_length, num_features, config_path)
+        else:
+            logging.warning(f"Bilinmeyen model türü: {model_name}. Atlanıyor.")
+            continue
+            
+        model.build_model()
+        model.fit_model(X_train, y_train, X_val, y_val, config_path)
+        trained_models[model_name] = model
+        logging.info(f"--- {model_name} Eğitimi Tamamlandı ---\n")
+        
+    return trained_models
