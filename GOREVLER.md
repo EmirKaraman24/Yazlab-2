@@ -70,7 +70,11 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 
 ## Aşama 5: Açıklanabilirlik ve Değerlendirme (Commit 41 - 55)
 - `[x]` (EMIR) Accuracy, Precision, Recall, F1-score hesaplayan metrikler modülü yazıldı.
+<<<<<<< HEAD
 - `[x]` (ARKADAS) Otomata için "Güven Skoru (Confidence Score)" hesaplama mantığı eklendi.
+=======
+- `[ ]` (ARKADAS) Otomata için "Güven Skoru (Confidence Score)" hesaplama mantığı eklendi.
+>>>>>>> 0a22242c5c52b7bd57c49581640dd432dc3aa047
 - `[ ]` (EMIR) Karar sürecini zorunlu formata (JSON) çeviren "Explainability Modülü" oluşturuldu.
 - `[ ]` (ARKADAS) Model karşılaştırmalarını loglayacak deney kayıt sistemi (CSV vb.) kuruldu.
 - `[ ]` (EMIR) 5 farklı seed (42, 123, 2026, 7, 999) üzerinde dönecek ana script (`main.py`) revize edildi.
