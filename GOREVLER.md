@@ -72,7 +72,7 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (EMIR) Accuracy, Precision, Recall, F1-score hesaplayan metrikler modülü yazıldı.
 - `[x]` (ARKADAS) Otomata için "Güven Skoru (Confidence Score)" hesaplama mantığı eklendi.
 - `[x]` (EMIR) Karar sürecini zorunlu formata (JSON) çeviren "Explainability Modülü" oluşturuldu.
-- `[ ]` (ARKADAS) Model karşılaştırmalarını loglayacak deney kayıt sistemi (CSV vb.) kuruldu.
+- `[x]` (ARKADAS) Model karşılaştırmalarını loglayacak deney kayıt sistemi (CSV vb.) kuruldu.
 - `[ ]` (EMIR) 5 farklı seed (42, 123, 2026, 7, 999) üzerinde dönecek ana script (`main.py`) revize edildi.
 - `[ ]` (ARKADAS) Gürültülü ve unseen veriler üzerinde de test yapacak ayrı deneme senaryosu eklendi.
 - `[ ]` (EMIR) Window size (3,4,5,6) ve Alphabet size (3,4,5,6) parametre varyasyonları için loop kuruldu.
