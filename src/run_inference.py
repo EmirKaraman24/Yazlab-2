@@ -28,6 +28,7 @@ import yaml
 sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 
 from dl_models import ModelWeightsManager, load_config
+from metrics import compute_binary_metrics
 
 logging.basicConfig(
     level=logging.INFO,
@@ -68,52 +69,6 @@ def _load_numpy_split(directory: str, split: str) -> tuple:
     y = np.load(y_path)
     logging.info("  Yüklendi: %s — X=%s, y=%s", directory, X.shape, y.shape)
     return X, y
-
-
-def _compute_binary_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
-    """
-    İkili sınıflandırma için temel metrikleri hesaplar.
-
-    Accuracy, Precision, Recall ve F1-score değerlerini döndürür.
-    Sıfıra bölme durumunda ilgili metrik ``0.0`` olarak raporlanır.
-
-    Parameters
-    ----------
-    y_true : np.ndarray
-        Gerçek etiketler (0 veya 1).
-    y_pred : np.ndarray
-        Tahmin edilen etiketler (0 veya 1).
-
-    Returns
-    -------
-    dict
-        ``accuracy``, ``precision``, ``recall``, ``f1`` anahtarlarını içerir.
-    """
-    tp = int(((y_pred == 1) & (y_true == 1)).sum())
-    tn = int(((y_pred == 0) & (y_true == 0)).sum())
-    fp = int(((y_pred == 1) & (y_true == 0)).sum())
-    fn = int(((y_pred == 0) & (y_true == 1)).sum())
-
-    total = tp + tn + fp + fn
-    accuracy  = (tp + tn) / total if total > 0 else 0.0
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
-    recall    = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-    f1        = (
-        2 * precision * recall / (precision + recall)
-        if (precision + recall) > 0
-        else 0.0
-    )
-
-    return {
-        "accuracy": round(accuracy, 4),
-        "precision": round(precision, 4),
-        "recall": round(recall, 4),
-        "f1": round(f1, 4),
-        "tp": tp,
-        "tn": tn,
-        "fp": fp,
-        "fn": fn,
-    }
 
 
 def _run_inference_on_split(
@@ -171,7 +126,7 @@ def _run_inference_on_split(
             continue
 
         result = model.predict_model(X_test, y_true=y_test, threshold=threshold)
-        metrics = _compute_binary_metrics(y_test, result["predictions"])
+        metrics = compute_binary_metrics(y_test, result["predictions"])
 
         row = {
             "dataset":   dataset_label,
