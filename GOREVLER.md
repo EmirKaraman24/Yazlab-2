@@ -65,7 +65,7 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (ARKADAS) Model tahminleri ve sonuçlarını döndüren fonksiyonlar (predict_model) yazıldı.
 - `[x]` (EMIR) Modellerin eğitilmesi için tek bir döngü (train_all_models) eklendi.
 - `[x]` (ARKADAS) Eğitim sürecindeki loss değerlerini loglayan callback sistemi yapıldı.
-- `[ ]` (EMIR) Eğitilmiş modelleri diske kaydeden ağırlık (weights) yönetim sistemi eklendi.
+- `[x]` (EMIR) Eğitilmiş modelleri diske kaydeden ağırlık (weights) yönetim sistemi eklendi.
 - `[ ]` (ARKADAS) Modeller arası performans çıkarımı (inference) script'i hazırlandı.
 
 ## Aşama 5: Açıklanabilirlik ve Değerlendirme (Commit 41 - 55)
