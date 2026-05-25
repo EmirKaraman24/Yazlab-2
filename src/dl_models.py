@@ -5,6 +5,7 @@ Bu modül TensorFlow/Keras importlarını ve tüm derin öğrenme modelleri
 """
 
 import logging
+import os
 import yaml
 import numpy as np
 
@@ -85,6 +86,57 @@ class BaseTimeSeriesModel:
             self.model.summary()
         else:
             logging.warning(f"[{self.model_name}] Model henüz oluşturulmadı (build_model() çağrılmalı).")
+
+    def save_weights(self, save_path: str) -> str:
+        """
+        Eğitilmiş modeli tam olarak (mimari + ağırlıklar) diske kaydeder.
+
+        Parameters
+        ----------
+        save_path : str
+            Kaydedilecek dosyanın tam yolu (örn. ``models/LSTM_seed42.keras``).
+            Dizin mevcut değilse otomatik olarak oluşturulur.
+
+        Returns
+        -------
+        str
+            Kaydedilen dosyanın yolu.
+
+        Raises
+        ------
+        RuntimeError
+            Model henüz oluşturulmamışsa (``build_model()`` çağrılmadıysa).
+        """
+        if self.model is None:
+            raise RuntimeError(
+                f"[{self.model_name}] Model oluşturulmamış! "
+                "Önce `build_model()` çalıştırılmalı."
+            )
+        os.makedirs(os.path.dirname(save_path) if os.path.dirname(save_path) else ".", exist_ok=True)
+        self.model.save(save_path)
+        logging.info("[%s] Model diske kaydedildi: %s", self.model_name, save_path)
+        return save_path
+
+    def load_weights(self, load_path: str) -> None:
+        """
+        Diskten kaydedilmiş bir modeli yükler ve ``self.model``'a atar.
+
+        Parameters
+        ----------
+        load_path : str
+            Yüklenecek ``.keras`` dosyasının tam yolu.
+
+        Raises
+        ------
+        FileNotFoundError
+            Belirtilen dosya bulunamazsa.
+        """
+        if not os.path.exists(load_path):
+            raise FileNotFoundError(
+                f"[{self.model_name}] Model dosyası bulunamadı: {load_path}"
+            )
+        self.model = tf.keras.models.load_model(load_path)
+        logging.info("[%s] Model diskten yüklendi: %s", self.model_name, load_path)
 
     def fit_model(self, X_train: np.ndarray, y_train: np.ndarray, X_val: np.ndarray = None, y_val: np.ndarray = None, config_path: str = "config.yaml", **kwargs):
         """
@@ -537,5 +589,168 @@ def train_all_models(
         model.fit_model(X_train, y_train, X_val, y_val, config_path)
         trained_models[model_name] = model
         logging.info(f"--- {model_name} Eğitimi Tamamlandı ---\n")
-        
+
+        # Eğitim dizini config'de tanımlıysa model otomatik kaydedilir
+        save_dir = config.get("deep_learning_params", {}).get("model_save_dir", "")
+        if save_dir:
+            safe_name = model_name.replace("/", "-").replace(" ", "_")
+            save_path = os.path.join(save_dir, f"{safe_name}.keras")
+            model.save_weights(save_path)
+
+        trained_models[model_name] = model
+
     return trained_models
+
+
+class ModelWeightsManager:
+    """
+    Eğitilmiş Keras modellerinin diske kaydedilmesini ve diskten
+    yüklenmesini yöneten ağırlık (weights) yönetim sistemi.
+
+    Kayıt Formatı
+    -------------
+    ``{save_dir}/{model_name}_{suffix}.keras``
+
+    ``save_dir`` değeri ``config.yaml`` içindeki
+    ``deep_learning_params.model_save_dir`` anahtarından okunur;
+    tanımlı değilse ``"models"`` dizini kullanılır.
+
+    Example
+    -------
+    >>> manager = ModelWeightsManager(config_path="config.yaml")
+    >>> manager.save(lstm_model, suffix="seed42")
+    >>> manager.save(cnn_model, suffix="seed42")
+    >>> loaded = manager.load("LSTM", sequence_length=4, num_features=1, suffix="seed42")
+    """
+
+    def __init__(self, config_path: str = "config.yaml"):
+        """
+        Parameters
+        ----------
+        config_path : str
+            Konfigürasyon dosyasının yolu.
+        """
+        self.config_path = config_path
+        config = load_config(config_path)
+        dl_params = config.get("deep_learning_params", {})
+        self.save_dir = dl_params.get("model_save_dir", "models")
+        os.makedirs(self.save_dir, exist_ok=True)
+        logging.info("[ModelWeightsManager] Model kayıt dizini: %s", self.save_dir)
+
+    def _build_path(self, model_name: str, suffix: str = "") -> str:
+        """
+        Model adı ve suffix'e göre dosya yolunu oluşturur.
+
+        Parameters
+        ----------
+        model_name : str
+            Model adı (örn. ``"LSTM"`` veya ``"1D-CNN"``).
+        suffix : str, optional
+            Dosya adına eklenecek ek bilgi (örn. seed numarası).
+
+        Returns
+        -------
+        str
+            Tam dosya yolu.
+        """
+        safe_name = model_name.replace("/", "-").replace(" ", "_")
+        filename = f"{safe_name}_{suffix}.keras" if suffix else f"{safe_name}.keras"
+        return os.path.join(self.save_dir, filename)
+
+    def save(self, model: BaseTimeSeriesModel, suffix: str = "") -> str:
+        """
+        Eğitilmiş modeli diske kaydeder.
+
+        Parameters
+        ----------
+        model : BaseTimeSeriesModel
+            Kaydedilecek eğitilmiş model nesnesi.
+        suffix : str, optional
+            Dosya adına eklenecek ek bilgi (örn. ``"seed42"``). Birden
+            fazla seed deneyi için farklı ağırlıkları ayrı tutmak amacıyla
+            kullanılır.
+
+        Returns
+        -------
+        str
+            Kaydedilen dosyanın tam yolu.
+        """
+        save_path = self._build_path(model.model_name, suffix)
+        return model.save_weights(save_path)
+
+    def load(
+        self,
+        model_name: str,
+        sequence_length: int,
+        num_features: int,
+        suffix: str = "",
+    ) -> BaseTimeSeriesModel:
+        """
+        Diskten kaydedilmiş bir modeli yükler ve hazır bir
+        ``BaseTimeSeriesModel`` alt sınıf örneği döndürür.
+
+        Parameters
+        ----------
+        model_name : str
+            Yüklenecek modelin adı: ``"LSTM"`` veya ``"1D-CNN"``.
+        sequence_length : int
+            Modelin beklediği girdi penceresi uzunluğu.
+        num_features : int
+            Modelin beklediği özellik sayısı.
+        suffix : str, optional
+            Kaydedilirken kullanılan suffix (örn. ``"seed42"``).
+
+        Returns
+        -------
+        BaseTimeSeriesModel
+            Ağırlıkları yüklenmiş model nesnesi.
+
+        Raises
+        ------
+        ValueError
+            ``model_name`` ``"LSTM"`` veya ``"1D-CNN"`` değilse.
+        FileNotFoundError
+            Belirtilen suffix'e ait dosya diskте bulunamazsa.
+        """
+        load_path = self._build_path(model_name, suffix)
+
+        if model_name == "LSTM":
+            model = LSTMModel(sequence_length, num_features, self.config_path)
+        elif model_name == "1D-CNN":
+            model = CNN1DModel(sequence_length, num_features, self.config_path)
+        else:
+            raise ValueError(
+                f"[ModelWeightsManager] Bilinmeyen model adı: '{model_name}'. "
+                "Geçerli seçenekler: 'LSTM', '1D-CNN'."
+            )
+
+        model.load_weights(load_path)
+        return model
+
+    def save_all(self, trained_models: dict, suffix: str = "") -> list:
+        """
+        ``train_all_models`` çıktısındaki tüm modelleri tek seferde kaydeder.
+
+        Parameters
+        ----------
+        trained_models : dict
+            ``train_all_models`` tarafından döndürülen sözlük
+            (anahtar: model adı, değer: ``BaseTimeSeriesModel`` örneği).
+        suffix : str, optional
+            Tüm dosyalara uygulanacak ortak suffix (örn. ``"seed42"``).
+
+        Returns
+        -------
+        list of str
+            Kaydedilen dosyaların yollarının listesi.
+        """
+        saved_paths = []
+        for model_name, model in trained_models.items():
+            path = self.save(model, suffix=suffix)
+            saved_paths.append(path)
+        logging.info(
+            "[ModelWeightsManager] %d model kaydedildi: %s",
+            len(saved_paths),
+            saved_paths,
+        )
+        return saved_paths
