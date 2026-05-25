@@ -66,11 +66,11 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (EMIR) Modellerin eğitilmesi için tek bir döngü (train_all_models) eklendi.
 - `[x]` (ARKADAS) Eğitim sürecindeki loss değerlerini loglayan callback sistemi yapıldı.
 - `[x]` (EMIR) Eğitilmiş modelleri diske kaydeden ağırlık (weights) yönetim sistemi eklendi.
-- `[ ]` (ARKADAS) Modeller arası performans çıkarımı (inference) script'i hazırlandı.
+- `[x]` (ARKADAS) Modeller arası performans çıkarımı (inference) script'i hazırlandı.
 
 ## Aşama 5: Açıklanabilirlik ve Değerlendirme (Commit 41 - 55)
-- `[ ]` (EMIR) Accuracy, Precision, Recall, F1-score hesaplayan metrikler modülü yazıldı.
-- `[ ]` (ARKADAS) Otomata için "Güven Skoru (Confidence Score)" hesaplama mantığı eklendi.
+- `[x]` (EMIR) Accuracy, Precision, Recall, F1-score hesaplayan metrikler modülü yazıldı.
+- `[x]` (ARKADAS) Otomata için "Güven Skoru (Confidence Score)" hesaplama mantığı eklendi.
 - `[ ]` (EMIR) Karar sürecini zorunlu formata (JSON) çeviren "Explainability Modülü" oluşturuldu.
 - `[ ]` (ARKADAS) Model karşılaştırmalarını loglayacak deney kayıt sistemi (CSV vb.) kuruldu.
 - `[ ]` (EMIR) 5 farklı seed (42, 123, 2026, 7, 999) üzerinde dönecek ana script (`main.py`) revize edildi.

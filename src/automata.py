@@ -10,6 +10,7 @@ bilinen duruma eşleyerek sistemin akışını oradan sürdürmek için kullanı
 """
 
 import logging
+import math
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -631,3 +632,52 @@ class ProbabilisticAutomata:
             f"Dizi uzunluğu: {len(sax_sequence)}, Olasılık: {path_prob:.4e}"
         )
         return path_prob
+
+    def compute_confidence_score(self, sax_sequence: list[str]) -> float:
+        """
+        Verilen SAX dizisinin (path) otomata üzerindeki güven skorunu
+        (Confidence Score) hesaplar.
+        
+        Güven skoru, dizi uzunluğundan (geçiş sayısından) bağımsız bir
+        değerlendirme yapabilmek için geçiş olasılıklarının geometrik 
+        ortalaması olarak hesaplanır. (Underflow'u önlemek için log-uzayında 
+        hesaplanır).
+        
+        Parameters
+        ----------
+        sax_sequence : list of str
+            Güven skoru hesaplanacak SAX örüntü dizisi. En az 2 eleman içermelidir.
+
+        Returns
+        -------
+        float
+            Normalize edilmiş güven skoru (0.0 ile 1.0 arası).
+            Eğer dizi 2 elemandan kısaysa 1.0 döner.
+        """
+        if not self.is_fitted:
+            raise RuntimeError("Model eğitilmedi. Lütfen önce fit() çağırın.")
+
+        if not sax_sequence or len(sax_sequence) < 2:
+            return 1.0
+
+        mapped_data = self.map_sequence_to_states(sax_sequence)
+        resolved_states = mapped_data["resolved_states"]
+
+        log_prob = 0.0
+        num_transitions = len(resolved_states) - 1
+
+        for i in range(num_transitions):
+            next_state = resolved_states[i+1]
+            next_id = self.state_to_id[next_state]
+            
+            prob = mapped_data["transition_rows"][i][next_id]
+            # Olasılık sıfırsa logaritma tanımsız olmasın diye çok küçük bir eps eklenir
+            log_prob += math.log(prob + 1e-12)
+
+        confidence_score = math.exp(log_prob / num_transitions)
+
+        logging.info(
+            f"Güven skoru hesaplandı. Geçiş sayısı: {num_transitions}, "
+            f"Skor: {confidence_score:.4f}"
+        )
+        return confidence_score
