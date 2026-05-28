@@ -73,9 +73,9 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (ARKADAS) Otomata için "Güven Skoru (Confidence Score)" hesaplama mantığı eklendi.
 - `[x]` (EMIR) Karar sürecini zorunlu formata (JSON) çeviren "Explainability Modülü" oluşturuldu.
 - `[x]` (ARKADAS) Model karşılaştırmalarını loglayacak deney kayıt sistemi (CSV vb.) kuruldu.
-- `[ ]` (EMIR) 5 farklı seed (42, 123, 2026, 7, 999) üzerinde dönecek ana script (`main.py`) revize edildi.
-- `[ ]` (ARKADAS) Gürültülü ve unseen veriler üzerinde de test yapacak ayrı deneme senaryosu eklendi.
-- `[ ]` (EMIR) Window size (3,4,5,6) ve Alphabet size (3,4,5,6) parametre varyasyonları için loop kuruldu.
+- `[x]` (EMIR) 5 farklı seed (42, 123, 2026, 7, 999) üzerinde dönecek ana script (`main.py`) revize edildi.
+- `[x]` (ARKADAS) Gürültülü ve unseen veriler üzerinde de test yapacak ayrı deneme senaryosu eklendi.
+- `[x]` (EMIR) Window size (3,4,5,6) ve Alphabet size (3,4,5,6) parametre varyasyonları için loop kuruldu.
 - `[ ]` (ARKADAS) Automata state diyagramı (graph) çizen görsellik fonksiyonu yazıldı.
 - `[ ]` (EMIR) Transition probability heatmap çizen görsellik fonksiyonu eklendi.
 - `[ ]` (ARKADAS) Confusion matrix ve performans metriklerini tablo/görsel yapan raporlama eklendi.

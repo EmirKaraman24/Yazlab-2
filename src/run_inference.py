@@ -71,6 +71,22 @@ def _load_numpy_split(directory: str, split: str) -> tuple:
     return X, y
 
 
+def _inject_noise(X: np.ndarray, noise_level: float = 0.5) -> np.ndarray:
+    """Veriye Gaussian gürültü ekler."""
+    noise = np.random.normal(0, noise_level, X.shape)
+    return X + noise
+
+
+def _inject_unseen(X: np.ndarray) -> np.ndarray:
+    """Veriye eğitimde görülmemiş (unseen) büyük offsetler ekler."""
+    X_unseen = X.copy()
+    n_samples = X.shape[0]
+    n_inject = max(1, int(n_samples * 0.05))
+    indices = np.random.choice(n_samples, n_inject, replace=False)
+    X_unseen[indices] += 10.0
+    return X_unseen
+
+
 def _run_inference_on_split(
     manager: ModelWeightsManager,
     models_to_run: list,
@@ -79,34 +95,20 @@ def _run_inference_on_split(
     dataset_label: str,
     suffix: str = "",
     threshold: float = 0.5,
+    scenario: str = "original",
 ) -> list:
     """
     Verilen test bölümü üzerinde tüm modeller için inference çalıştırır.
-
-    Parameters
-    ----------
-    manager : ModelWeightsManager
-        Kaydedilmiş modelleri yükleyen yönetici nesnesi.
-    models_to_run : list of str
-        Çalıştırılacak model adları (örn. ``["LSTM", "1D-CNN"]``).
-    X_test : np.ndarray
-        Test özellikleri, şekil: ``(n_samples, sequence_length, num_features)``.
-    y_test : np.ndarray
-        Gerçek etiketler, şekil: ``(n_samples,)``.
-    dataset_label : str
-        Sonuç tablosuna eklenecek veri seti etiketi (örn. ``"SKAB_fold_1"``).
-    suffix : str, optional
-        ModelWeightsManager ile kaydedilirken kullanılan suffix.
-    threshold : float, optional
-        Sigmoid → ikili etiket dönüşümü eşiği. Varsayılan: 0.5.
-
-    Returns
-    -------
-    list of dict
-        Her model için bir satır içeren sonuç listesi.
     """
     sequence_length = X_test.shape[1]
     num_features    = X_test.shape[2]
+
+    if scenario == "noisy":
+        X_test = _inject_noise(X_test, noise_level=0.5)
+        dataset_label = f"{dataset_label}_noisy"
+    elif scenario == "unseen":
+        X_test = _inject_unseen(X_test)
+        dataset_label = f"{dataset_label}_unseen"
 
     rows = []
     for model_name in models_to_run:
@@ -212,6 +214,7 @@ def run_skab_inference(
     manager: ModelWeightsManager,
     processed_data_dir: str,
     suffix: str = "",
+    scenario: str = "original",
 ) -> list:
     """
     SKAB veri setinin tüm fold'ları üzerinde inference çalıştırır.
@@ -229,6 +232,8 @@ def run_skab_inference(
         İşlenmiş verilerin kök klasörü (ör. ``"data/processed"``).
     suffix : str, optional
         Model dosyalarında kullanılan suffix.
+    scenario : str, optional
+        "original", "noisy" veya "unseen" senaryosu.
 
     Returns
     -------
@@ -236,7 +241,7 @@ def run_skab_inference(
         Tüm fold'lara ait sonuç satırları.
     """
     logging.info("=" * 60)
-    logging.info("SKAB inference başlatıldı.")
+    logging.info(f"SKAB inference başlatıldı. Senaryo: {scenario}")
     logging.info("=" * 60)
 
     n_splits      = config["preprocessing"].get("n_splits", 5)
@@ -251,11 +256,14 @@ def run_skab_inference(
             continue
 
         dataset_label = f"SKAB_fold_{fold_num}"
-        rows = _run_inference_on_split(
+        split_rows = _run_inference_on_split(
             manager, models_to_run, X_test, y_test,
-            dataset_label=dataset_label, suffix=suffix, threshold=threshold,
+            dataset_label=dataset_label,
+            suffix=suffix,
+            threshold=threshold,
+            scenario=scenario,
         )
-        all_rows.extend(rows)
+        all_rows.extend(split_rows)
 
     logging.info("SKAB inference tamamlandı. (%d satır)", len(all_rows))
     return all_rows
@@ -271,12 +279,10 @@ def run_batadal_inference(
     manager: ModelWeightsManager,
     processed_data_dir: str,
     suffix: str = "",
+    scenario: str = "original",
 ) -> list:
     """
-    BATADAL test seti üzerinde inference çalıştırır.
-
-    ``{processed_data_dir}/batadal/test_X.npy`` ve ``test_y.npy``
-    dosyaları okunur.
+    BATADAL veri setinin test kısmı üzerinde inference çalıştırır.
 
     Parameters
     ----------
@@ -288,14 +294,16 @@ def run_batadal_inference(
         İşlenmiş verilerin kök klasörü (ör. ``"data/processed"``).
     suffix : str, optional
         Model dosyalarında kullanılan suffix.
+    scenario : str, optional
+        "original", "noisy" veya "unseen" senaryosu.
 
     Returns
     -------
     list of dict
-        BATADAL test seti için sonuç satırları.
+        Sonuç satırları.
     """
     logging.info("=" * 60)
-    logging.info("BATADAL inference başlatıldı.")
+    logging.info(f"BATADAL inference başlatıldı. Senaryo: {scenario}")
     logging.info("=" * 60)
 
     models_to_run = config.get("deep_learning_params", {}).get("models_to_run", ["LSTM", "1D-CNN"])
@@ -304,12 +312,16 @@ def run_batadal_inference(
     batadal_dir = os.path.join(processed_data_dir, "batadal")
     X_test, y_test = _load_numpy_split(batadal_dir, "test")
     if X_test is None:
-        logging.warning("BATADAL test verisi bulunamadı; atlanıyor.")
+        logging.warning("BATADAL test verisi bulunamadı. Inference atlanıyor.")
         return []
 
+    dataset_label = "BATADAL_test"
     rows = _run_inference_on_split(
         manager, models_to_run, X_test, y_test,
-        dataset_label="BATADAL_test", suffix=suffix, threshold=threshold,
+        dataset_label=dataset_label,
+        suffix=suffix,
+        threshold=threshold,
+        scenario=scenario,
     )
     logging.info("BATADAL inference tamamlandı. (%d satır)", len(rows))
     return rows
