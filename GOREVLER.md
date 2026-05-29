@@ -76,9 +76,9 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (EMIR) 5 farklı seed (42, 123, 2026, 7, 999) üzerinde dönecek ana script (`main.py`) revize edildi.
 - `[x]` (ARKADAS) Gürültülü ve unseen veriler üzerinde de test yapacak ayrı deneme senaryosu eklendi.
 - `[x]` (EMIR) Window size (3,4,5,6) ve Alphabet size (3,4,5,6) parametre varyasyonları için loop kuruldu.
-- `[ ]` (ARKADAS) Automata state diyagramı (graph) çizen görsellik fonksiyonu yazıldı.
-- `[ ]` (EMIR) Transition probability heatmap çizen görsellik fonksiyonu eklendi.
-- `[ ]` (ARKADAS) Confusion matrix ve performans metriklerini tablo/görsel yapan raporlama eklendi.
+- `[x]` (ARKADAS) Automata state diyagramı (graph) çizen görsellik fonksiyonu yazıldı.
+- `[x]` (EMIR) Transition probability heatmap çizen görsellik fonksiyonu eklendi.
+- `[x]` (ARKADAS) Confusion matrix ve performans metriklerini tablo/görsel yapan raporlama eklendi.
 - `[ ]` (EMIR) Parametre duyarlılık grafikleri oluşturuldu.
 - `[ ]` (ARKADAS) Orijinal ve Gürültülü sonuçların farkını karşılaştıran script yazıldı.
 - `[ ]` (EMIR) Wilcoxon / McNemar testleri ile modellerin istatistiksel anlamlılık analizi eklendi.
