@@ -81,8 +81,8 @@ Bu liste, 50-60 commit olacak şekilde sizin (EMIR) ve arkadaşınızın (ARKADA
 - `[x]` (ARKADAS) Confusion matrix ve performans metriklerini tablo/görsel yapan raporlama eklendi.
 - `[x]` (EMIR) Parametre duyarlılık grafikleri oluşturuldu.
 - `[x]` (ARKADAS) Orijinal ve Gürültülü sonuçların farkını karşılaştıran script yazıldı.
-- `[ ]` (EMIR) Wilcoxon / McNemar testleri ile modellerin istatistiksel anlamlılık analizi eklendi.
-- `[ ]` (ARKADAS) SKAB sonuçlarını fold bazında, BATADAL sonuçlarını test veri setinde formatlayıp çıkartan kodlar yazıldı.
+- `[x]` (EMIR) Wilcoxon / McNemar testleri ile modellerin istatistiksel anlamlılık analizi eklendi.
+- `[x]` (ARKADAS) SKAB sonuçlarını fold bazında, BATADAL sonuçlarını test veri setinde formatlayıp çıkartan kodlar yazıldı.
 - `[ ]` (EMIR) Projenin baştan sona (end-to-end) birleştirilip test edilmesi.
 
 ## Aşama 6: Raporlama ve Final (Commit 56 - 60)
