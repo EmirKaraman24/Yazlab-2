@@ -29,6 +29,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 
 from dl_models import ModelWeightsManager, load_config
 from metrics import compute_binary_metrics
+from sax import SAXTransformer
+from automata import ProbabilisticAutomata
 
 logging.basicConfig(
     level=logging.INFO,
@@ -96,6 +98,7 @@ def _run_inference_on_split(
     suffix: str = "",
     threshold: float = 0.5,
     scenario: str = "original",
+    config: dict = None,
 ) -> list:
     """
     Verilen test bölümü üzerinde tüm modeller için inference çalıştırır.
@@ -104,7 +107,10 @@ def _run_inference_on_split(
     num_features    = X_test.shape[2]
 
     if scenario == "noisy":
-        X_test = _inject_noise(X_test, noise_level=0.5)
+        noise_level = 0.1
+        if config is not None:
+            noise_level = config.get("preprocessing", {}).get("gaussian_noise_std", 0.1)
+        X_test = _inject_noise(X_test, noise_level=noise_level)
         dataset_label = f"{dataset_label}_noisy"
     elif scenario == "unseen":
         X_test = _inject_unseen(X_test)
@@ -127,7 +133,12 @@ def _run_inference_on_split(
             logging.warning("  Model dosyası bulunamadı, atlanıyor: %s", exc)
             continue
 
+        import time
+        start_time = time.time()
         result = model.predict_model(X_test, y_true=y_test, threshold=threshold)
+        inference_time = time.time() - start_time
+        training_time = getattr(model, "training_time", 0.0)
+
         metrics = compute_binary_metrics(y_test, result["predictions"])
 
         row = {
@@ -137,14 +148,17 @@ def _run_inference_on_split(
             "n_samples": result["n_samples"],
             "n_anomalies_pred": result["n_anomalies"],
             "n_anomalies_true": int(y_test.sum()),
+            "training_time": training_time,
+            "inference_time": inference_time,
             **metrics,
         }
         rows.append(row)
         logging.info(
-            "  [%s | %s] Acc=%.4f  P=%.4f  R=%.4f  F1=%.4f",
+            "  [%s | %s] Acc=%.4f  P=%.4f  R=%.4f  F1=%.4f (train_time=%.2fs, inf_time=%.2fs)",
             dataset_label, model_name,
             metrics["accuracy"], metrics["precision"],
             metrics["recall"], metrics["f1"],
+            training_time, inference_time,
         )
 
     return rows
@@ -262,6 +276,7 @@ def run_skab_inference(
             suffix=suffix,
             threshold=threshold,
             scenario=scenario,
+            config=config,
         )
         all_rows.extend(split_rows)
 
@@ -322,8 +337,177 @@ def run_batadal_inference(
         suffix=suffix,
         threshold=threshold,
         scenario=scenario,
+        config=config,
     )
     logging.info("BATADAL inference tamamlandı. (%d satır)", len(rows))
+    return rows
+
+
+def _evaluate_automata_per_step(automata, sax_sequence, anomaly_threshold=0.05):
+    """
+    Otomata için adım adım anomali tespiti yapar.
+    Görülmemiş (unseen) durumlar veya geçiş olasılığı threshold'un altında
+    kalan durumlar anomali (1) olarak etiketlenir.
+    """
+    n = len(sax_sequence)
+    y_pred = np.zeros(n)
+    if n < 2:
+        return y_pred
+        
+    mapped_data = automata.map_sequence_to_states(sax_sequence)
+    resolved_states = mapped_data["resolved_states"]
+    transition_rows = mapped_data["transition_rows"]
+    
+    for i in range(n - 1):
+        raw_state = sax_sequence[i+1]
+        is_unseen = raw_state not in automata.state_to_id
+        
+        if is_unseen:
+            # Görülmemiş (unseen) durumlar anomali olarak kabul edilir
+            y_pred[i+1] = 1
+        else:
+            next_state = resolved_states[i+1]
+            next_id = automata.state_to_id[next_state]
+            prob = transition_rows[i][next_id]
+            
+            # Geçiş olasılığı çok düşükse anomali
+            if prob < anomaly_threshold:
+                y_pred[i+1] = 1
+                
+    return y_pred
+
+
+def run_automata_inference_on_split(
+    sax_transformer: SAXTransformer,
+    automata: ProbabilisticAutomata,
+    X_test: np.ndarray,
+    y_test: np.ndarray,
+    dataset_label: str,
+    suffix: str = "",
+    scenario: str = "original",
+    config: dict = None,
+    training_time: float = 0.0,
+) -> list:
+    """
+    Olasılıksal Otomata için verilen test bölümü üzerinde inference çalıştırır.
+    """
+    if scenario == "noisy":
+        noise_level = 0.1
+        if config is not None:
+            noise_level = config.get("preprocessing", {}).get("gaussian_noise_std", 0.1)
+        X_test = _inject_noise(X_test, noise_level=noise_level)
+        dataset_label = f"{dataset_label}_noisy"
+    elif scenario == "unseen":
+        X_test = _inject_unseen(X_test)
+        dataset_label = f"{dataset_label}_unseen"
+
+    import time
+    start_time = time.time()
+    # Test verisini SAX dizisine dönüştür
+    test_sax = sax_transformer.transform(X_test)
+    
+    # Otomata anomali skoru hesapla
+    anomaly_threshold = 0.05
+    y_pred = _evaluate_automata_per_step(automata, test_sax, anomaly_threshold=anomaly_threshold)
+    inference_time = time.time() - start_time
+
+    # Metrikleri hesapla
+    metrics = compute_binary_metrics(y_test, y_pred)
+
+    row = {
+        "dataset":   dataset_label,
+        "model":     "ProbabilisticAutomata",
+        "suffix":    suffix,
+        "n_samples": len(y_test),
+        "n_anomalies_pred": int(np.sum(y_pred)),
+        "n_anomalies_true": int(y_test.sum()),
+        "training_time": training_time,
+        "inference_time": inference_time,
+        **metrics,
+    }
+    
+    logging.info(
+        "  [%s | Automata] Acc=%.4f  P=%.4f  R=%.4f  F1=%.4f (train_time=%.2fs, inf_time=%.2fs)",
+        dataset_label,
+        metrics["accuracy"], metrics["precision"],
+        metrics["recall"], metrics["f1"],
+        training_time, inference_time,
+    )
+    return [row]
+
+
+def run_skab_automata_inference(
+    config: dict,
+    sax_transformer: SAXTransformer,
+    automata: ProbabilisticAutomata,
+    processed_data_dir: str,
+    suffix: str = "",
+    scenario: str = "original",
+    training_time: float = 0.0,
+) -> list:
+    """
+    SKAB veri setinin tüm fold'ları üzerinde Automata inference çalıştırır.
+    """
+    logging.info("=" * 60)
+    logging.info(f"SKAB Automata inference başlatıldı. Senaryo: {scenario}")
+    logging.info("=" * 60)
+
+    n_splits      = config["preprocessing"].get("n_splits", 5)
+    all_rows = []
+    
+    for fold_num in range(1, n_splits + 1):
+        fold_dir = os.path.join(processed_data_dir, "skab", f"fold_{fold_num}")
+        X_test, y_test = _load_numpy_split(fold_dir, "test")
+        if X_test is None:
+            continue
+
+        dataset_label = f"SKAB_fold_{fold_num}"
+        split_rows = run_automata_inference_on_split(
+            sax_transformer, automata, X_test, y_test,
+            dataset_label=dataset_label,
+            suffix=suffix,
+            scenario=scenario,
+            config=config,
+            training_time=training_time,
+        )
+        all_rows.extend(split_rows)
+
+    logging.info("SKAB Automata inference tamamlandı. (%d satır)", len(all_rows))
+    return all_rows
+
+
+def run_batadal_automata_inference(
+    config: dict,
+    sax_transformer: SAXTransformer,
+    automata: ProbabilisticAutomata,
+    processed_data_dir: str,
+    suffix: str = "",
+    scenario: str = "original",
+    training_time: float = 0.0,
+) -> list:
+    """
+    BATADAL veri setinin test kısmı üzerinde Automata inference çalıştırır.
+    """
+    logging.info("=" * 60)
+    logging.info(f"BATADAL Automata inference başlatıldı. Senaryo: {scenario}")
+    logging.info("=" * 60)
+
+    batadal_dir = os.path.join(processed_data_dir, "batadal")
+    X_test, y_test = _load_numpy_split(batadal_dir, "test")
+    if X_test is None:
+        logging.warning("BATADAL test verisi bulunamadı. Inference atlanıyor.")
+        return []
+
+    dataset_label = "BATADAL_test"
+    rows = run_automata_inference_on_split(
+        sax_transformer, automata, X_test, y_test,
+        dataset_label=dataset_label,
+        suffix=suffix,
+        scenario=scenario,
+        config=config,
+        training_time=training_time,
+    )
+    logging.info("BATADAL Automata inference tamamlandı. (%d satır)", len(rows))
     return rows
 
 

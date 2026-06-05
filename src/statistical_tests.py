@@ -310,4 +310,4 @@ if __name__ == "__main__":
 
     if results:
         sig_count = sum(1 for r in results if r["significant"])
-        print(f"Toplam {len(results)} karşılaştırmadan {sig_count} tanesi anlamlı (α=0.05).\n")
+        print(f"Toplam {len(results)} karşılaştırmadan {sig_count} tanesi anlamlı (alpha=0.05).\n")

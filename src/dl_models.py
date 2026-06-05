@@ -72,6 +72,7 @@ class BaseTimeSeriesModel:
         self.num_features = num_features
         self.model_name = model_name
         self.model = None
+        self.training_time = 0.0
 
     def build_model(self):
         """
@@ -207,6 +208,8 @@ class BaseTimeSeriesModel:
 
         logging.info(f"[{self.model_name}] Model eğitimi başlatılıyor... (Epochs: {epochs}, Batch Size: {batch_size})")
 
+        import time
+        start_time = time.time()
         history = self.model.fit(
             X_train,
             y_train,
@@ -216,8 +219,9 @@ class BaseTimeSeriesModel:
             callbacks=callback_list,
             **kwargs
         )
+        self.training_time = time.time() - start_time
 
-        logging.info(f"[{self.model_name}] Eğitim süreci tamamlandı.")
+        logging.info(f"[{self.model_name}] Eğitim süreci tamamlandı. Süre: {self.training_time:.2f} saniye.")
         return history
 
     def predict_proba(self, X: np.ndarray, batch_size: int = 32) -> np.ndarray:
@@ -537,6 +541,71 @@ class LSTMModel(BaseTimeSeriesModel):
         return self.model
 
 
+class GRUModel(BaseTimeSeriesModel):
+    """
+    config.yaml parametrelerine bağlı Uzun Dönemli Bellek (GRU) modeli.
+    """
+
+    def __init__(
+        self,
+        sequence_length: int,
+        num_features: int,
+        config_path: str = "config.yaml",
+    ):
+        super().__init__(
+            sequence_length=sequence_length,
+            num_features=num_features,
+            model_name="GRU",
+        )
+        config = load_config(config_path)
+        dl_params = config["deep_learning_params"]
+
+        self.gru_units = dl_params["gru_units"]
+        self.dropout_rate = dl_params["gru_dropout_rate"]
+        self.dense_units = dl_params["gru_dense_units"]
+        self.learning_rate = dl_params["learning_rate"]
+
+        logging.info(
+            "[GRU] Hiperparametreler yüklendi: "
+            "gru_units=%d, dropout_rate=%.2f, dense_units=%d, learning_rate=%.4f",
+            self.gru_units,
+            self.dropout_rate,
+            self.dense_units,
+            self.learning_rate,
+        )
+
+    def build_model(self) -> tf.keras.Model:
+        input_layer = layers.Input(
+            shape=(self.sequence_length, self.num_features),
+            name="input_sequence",
+        )
+
+        x = layers.GRU(
+            units=self.gru_units,
+            return_sequences=False,
+            name="gru_layer",
+        )(input_layer)
+
+        x = layers.Dropout(self.dropout_rate, name="dropout")(x)
+        x = layers.Dense(self.dense_units, activation="relu", name="dense_hidden")(x)
+        output_layer = layers.Dense(1, activation="sigmoid", name="output")(x)
+
+        self.model = models.Model(
+            inputs=input_layer,
+            outputs=output_layer,
+            name=self.model_name,
+        )
+
+        self.model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=self.learning_rate),
+            loss="binary_crossentropy",
+            metrics=["accuracy"],
+        )
+
+        logging.info("[GRU] Model başarıyla oluşturuldu ve derlendi.")
+        return self.model
+
+
 def train_all_models(
     X_train: np.ndarray,
     y_train: np.ndarray,
@@ -581,6 +650,8 @@ def train_all_models(
             model = LSTMModel(sequence_length, num_features, config_path)
         elif model_name == "1D-CNN":
             model = CNN1DModel(sequence_length, num_features, config_path)
+        elif model_name == "GRU":
+            model = GRUModel(sequence_length, num_features, config_path)
         else:
             logging.warning(f"Bilinmeyen model türü: {model_name}. Atlanıyor.")
             continue
@@ -676,6 +747,14 @@ class ModelWeightsManager:
             Kaydedilen dosyanın tam yolu.
         """
         save_path = self._build_path(model.model_name, suffix)
+        
+        # Eğitim süresini kaydet
+        time_file = os.path.join(self.save_dir, f"time_{model.model_name}_{suffix}.txt")
+        training_time = getattr(model, "training_time", 0.0)
+        with open(time_file, "w", encoding="utf-8") as f:
+            f.write(str(training_time))
+        logging.info("[%s] Model eğitim süresi kaydedildi: %.2fs -> %s", model.model_name, training_time, time_file)
+        
         return model.save_weights(save_path)
 
     def load(
@@ -718,13 +797,24 @@ class ModelWeightsManager:
             model = LSTMModel(sequence_length, num_features, self.config_path)
         elif model_name == "1D-CNN":
             model = CNN1DModel(sequence_length, num_features, self.config_path)
+        elif model_name == "GRU":
+            model = GRUModel(sequence_length, num_features, self.config_path)
         else:
             raise ValueError(
                 f"[ModelWeightsManager] Bilinmeyen model adı: '{model_name}'. "
-                "Geçerli seçenekler: 'LSTM', '1D-CNN'."
+                "Geçerli seçenekler: 'LSTM', '1D-CNN', 'GRU'."
             )
 
         model.load_weights(load_path)
+        
+        # Kaydedilen eğitim süresini yükle
+        time_file = os.path.join(self.save_dir, f"time_{model_name}_{suffix}.txt")
+        if os.path.exists(time_file):
+            with open(time_file, "r", encoding="utf-8") as f:
+                model.training_time = float(f.read().strip())
+        else:
+            model.training_time = 0.0
+            
         return model
 
     def save_all(self, trained_models: dict, suffix: str = "") -> list:

@@ -22,7 +22,7 @@ automata_params:
   alphabet_sizes: [3, 4, 5, 6]
 
 deep_learning_params:
-  models_to_run: ["LSTM", "1D-CNN"]
+  models_to_run: ["LSTM", "1D-CNN", "GRU"]
   epochs: 50
   batch_size: 32
   early_stopping_patience: 5
@@ -39,6 +39,11 @@ deep_learning_params:
   lstm_units: 64                  # LSTM katmanındaki nöron sayısı
   lstm_dropout_rate: 0.3          # LSTM sonrası dropout oranı
   lstm_dense_units: 32            # Çıkış öncesi gizli katman nöron sayısı
+
+  # GRU mimarisi parametreleri
+  gru_units: 64                   # GRU katmanındaki nöron sayısı
+  gru_dropout_rate: 0.3           # GRU sonrası dropout oranı
+  gru_dense_units: 32             # Çıkış öncesi gizli katman nöron sayısı
 
 experiment_scenarios:
   run_original: true

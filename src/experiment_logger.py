@@ -73,6 +73,8 @@ _CSV_FIELDNAMES: list[str] = [
     "tn",
     "fp",
     "fn",
+    "training_time",
+    "inference_time",
     "notes",
 ]
 
@@ -152,6 +154,8 @@ class ExperimentLogger:
         n_samples: Optional[int] = None,
         n_anomalies_true: Optional[int] = None,
         n_anomalies_pred: Optional[int] = None,
+        training_time: Optional[float] = None,
+        inference_time: Optional[float] = None,
         notes: str = "",
         experiment_id: Optional[str] = None,
     ) -> str:
@@ -232,6 +236,8 @@ class ExperimentLogger:
             "tn":               metrics.get("tn", ""),
             "fp":               metrics.get("fp", ""),
             "fn":               metrics.get("fn", ""),
+            "training_time":    training_time if training_time is not None else metrics.get("training_time", ""),
+            "inference_time":   inference_time if inference_time is not None else metrics.get("inference_time", ""),
             "notes":            notes,
         }
 

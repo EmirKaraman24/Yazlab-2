@@ -1,0 +1,13 @@
+dataset,model_a,model_b,metric,n_samples,mean_a,mean_b,mean_diff,statistic,p_value,significant,alpha,conclusion
+SKAB,1D-CNN,GRU,f1,75,0.0,0.0,0.0,0.0,1.0,False,0.05,Modeller arasında fark yok (tüm farklar sıfır).
+SKAB,1D-CNN,LSTM,f1,75,0.0,0.0,0.0,0.0,1.0,False,0.05,Modeller arasında fark yok (tüm farklar sıfır).
+SKAB,1D-CNN,ProbabilisticAutomata,f1,75,0.0,0.1,-0.100048,0.0,0.0,True,0.05,Anlamlı fark var (p=0.0000 < α=0.05). Model B istatistiksel olarak daha iyi.
+SKAB,GRU,LSTM,f1,75,0.0,0.0,0.0,0.0,1.0,False,0.05,Modeller arasında fark yok (tüm farklar sıfır).
+SKAB,GRU,ProbabilisticAutomata,f1,75,0.0,0.1,-0.100048,0.0,0.0,True,0.05,Anlamlı fark var (p=0.0000 < α=0.05). Model B istatistiksel olarak daha iyi.
+SKAB,LSTM,ProbabilisticAutomata,f1,75,0.0,0.1,-0.100048,0.0,0.0,True,0.05,Anlamlı fark var (p=0.0000 < α=0.05). Model B istatistiksel olarak daha iyi.
+BATADAL,1D-CNN,GRU,f1,15,0.0,0.0,0.0,0.0,1.0,False,0.05,Modeller arasında fark yok (tüm farklar sıfır).
+BATADAL,1D-CNN,LSTM,f1,15,0.0,0.0,0.0,0.0,1.0,False,0.05,Modeller arasında fark yok (tüm farklar sıfır).
+BATADAL,1D-CNN,ProbabilisticAutomata,f1,15,0.0,0.0814,-0.081447,0.0,0.000623,True,0.05,Anlamlı fark var (p=0.0006 < α=0.05). Model B istatistiksel olarak daha iyi.
+BATADAL,GRU,LSTM,f1,15,0.0,0.0,0.0,0.0,1.0,False,0.05,Modeller arasında fark yok (tüm farklar sıfır).
+BATADAL,GRU,ProbabilisticAutomata,f1,15,0.0,0.0814,-0.081447,0.0,0.000623,True,0.05,Anlamlı fark var (p=0.0006 < α=0.05). Model B istatistiksel olarak daha iyi.
+BATADAL,LSTM,ProbabilisticAutomata,f1,15,0.0,0.0814,-0.081447,0.0,0.000623,True,0.05,Anlamlı fark var (p=0.0006 < α=0.05). Model B istatistiksel olarak daha iyi.
